@@ -1,5 +1,14 @@
 site_name: Auspiow's note
 
+nav:
+  - Home: index.md
+  - CTF:
+      - Writeups:
+        - AliyunCTF 2026: ctf/writeups/Aliyun2026.md
+  - CS:
+      - Frontend:
+        - JavaScript: cs/frontend/javascript.md
+
 theme:
   name: material
   language: zh  # 设置为中文
