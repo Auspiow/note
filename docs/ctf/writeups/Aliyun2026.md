@@ -1,8 +1,4 @@
----
-title: "Aliyun2026 Writeup: RAG | Easy Login"
-date: 2026-02-01
-draft: false
----
+# Aliyun2026 Writeup: RAG | Easy Login
 
 阿里云CTF好难，单人队只能划划水了，做了两道最简单的题目
 
