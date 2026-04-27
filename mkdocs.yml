@@ -14,6 +14,8 @@ plugins:
   - statistics:
       page_statistics: true
       page_read_time: true
+      page_images: false
+      page_template: templates/page_statistics.md
       words_per_minute: 300
       codelines_per_minute: 80
 nav:
