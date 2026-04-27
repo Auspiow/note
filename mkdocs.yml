@@ -1,0 +1,31 @@
+site_name: 我的文档项目
+
+theme:
+  name: material
+  language: zh  # 设置为中文
+  palette: 
+    # 自动切换深浅模式
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: grey
+      accent: grey
+      toggle:
+        icon: material/brightness-7
+        help: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: grey
+      accent: grey
+      toggle:
+        icon: material/brightness-4
+        help: 切换到浅色模式
+  features:
+    - navigation.tabs      # 启用顶部导航栏
+    - navigation.sections  # 侧边栏分组显示
+    - search.suggest       # 搜索建议
+    - search.highlight     # 搜索关键词高亮
+
+markdown_extensions:
+  - admonition          # 提示框
+  - pymdownx.details    # 折叠框
+  - pymdownx.superfences # 支持代码块嵌套
