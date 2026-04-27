@@ -10,6 +10,7 @@ plugins:
   - encryptcontent:
       password_inventory:
         secret: !ENV ENCRYPTCONTENT_PASSWORD
+      threshold_warning_min_entropy: 0
 nav:
   - Home: index.md
   - CTF:
