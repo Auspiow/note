@@ -37,6 +37,7 @@ jobs:
           pip install mkdocs-rss-plugin
           pip install mkdocs-git-revision-date-localized-plugin
           pip install mkdocs-encryptcontent-plugin
+            pip install mkdocs-statistics-plugin
 
       - name: Build site
         env:
