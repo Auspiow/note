@@ -32,8 +32,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install mkdocs-material
+          pip install mkdocs-rss-plugin
+          pip install mkdocs-git-revision-date-localized-plugin
+          pip install mkdocs-encryptcontent-plugin
 
       - name: Build site
+        env:
+          ENCRYPTCONTENT_PASSWORD: ${{ secrets.ENCRYPTCONTENT_PASSWORD }}
         run: mkdocs build --strict
 
       - name: Setup Pages

@@ -1,10 +1,21 @@
 site_name: Auspiow's note
+site_url: https://auspiow.github.io/note/
 
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - rss:
+      enabled: true
+  - encryptcontent:
+      password_inventory:
+        secret: !ENV ENCRYPTCONTENT_PASSWORD
 nav:
   - Home: index.md
   - CTF:
       - Writeups:
         - AliyunCTF 2026: ctf/writeups/Aliyun2026.md
+      - ZJUBus-Web: ctf/writeups/zjubus-web/index.md
   - CS:
       - Frontend:
         - JavaScript: cs/frontend/javascript.md
@@ -37,4 +48,9 @@ theme:
 markdown_extensions:
   - admonition          # 提示框
   - pymdownx.details    # 折叠框
+  - pymdownx.highlight:
+      pygments_style: one-dark
+      pygments_lang_class: true
   - pymdownx.superfences # 支持代码块嵌套
+  - pymdownx.tasklist:
+      custom_checkbox: true
