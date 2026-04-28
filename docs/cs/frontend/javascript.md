@@ -1129,3 +1129,27 @@ for (let i in arr) {
 > Object.keys(o)该方法返回对象 `o` 自身包含（不包括原型中）的所有可枚举属性的名称的数组。
 >
 > Object.getOwnPropertyNames(o)该方法返回对象 `o` 自身包含（不包括原型中）的所有属性 (无论是否可枚举) 的名称的数组。
+
+## 附录
+
+### 运算符优先级
+
+| Operator type          | Individual operators                     |
+| :--------------------- | :--------------------------------------- |
+| member                 | `. []`                                   |
+| call / create instance | `() new`                                 |
+| negation/increment     | `! ~ - + ++ -- typeof void delete`       |
+| multiply/divide        | `* / %`                                  |
+| addition/subtraction   | `+ -`                                    |
+| bitwise shift          | `<< >> >>>`                              |
+| relational             | `< <= > >= in instanceof`                |
+| equality               | `== != === !==`                          |
+| bitwise-and            | `&`                                      |
+| bitwise-xor            | `^`                                      |
+| bitwise-or             | `|`                                      |
+| logical-and            | `&&`                                     |
+| logical-or             | `||`                                     |
+| conditional            | `?:`                                     |
+| assignment             | `= += -= *= /= %= <<= >>= >>>= &= ^= |=` |
+| comma                  | `,`                                      |
+
