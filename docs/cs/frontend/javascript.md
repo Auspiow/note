@@ -842,3 +842,290 @@ alert( sum(1, 2) ); // 3
 **严格模式下，当一个函数声明在一个代码块内时，它在该代码块内的任何位置都是可见的。但在代码块外不可见。**
 
 
+## 对象
+
+我们可以用下面两种语法中的任一种来创建一个空的对象，通常用花括号（字面量）。
+
+```javascript
+let user = new Object(); // “构造函数” 的语法
+let user = {};  // “字面量” 的语法
+```
+
+
+
+### 属性
+
+可以在创建对象的时候，立即将一些属性以键值对的形式放到 `{...}` 中。
+
+```javascript
+let user = {     // 一个对象
+  name: "John",  // 键 "name"，值 "John"
+  age: 30        // 键 "age"，值 30
+};
+```
+
+属性有键（或者也可以叫做“名字”或“标识符”），位于冒号 `":"` 的前面，值在冒号的右边。
+
+可以使用点符号访问属性值，属性的值可以是任意类型：
+
+```javascript
+// 读取文件的属性：
+alert( user.name ); // John
+alert( user.age ); // 30
+user.isAdmin = true;
+```
+
+用 `delete` 操作符移除属性：
+
+```javascript
+delete user.age;
+```
+
+我们也可以用多字词语来作为属性名，但必须给它们加上引号：
+
+```javascript
+let user = {
+  name: "John",
+  age: 30,
+  "likes birds": true  // 多词属性名必须加引号
+};
+```
+
+属性的名字如果不是有效的JS标识符，只能通过方括号标记访问。
+
+```js
+let myObj = new Object(),obj = new Object();
+
+myObj.type = "Dot syntax";
+myObj["date created"] = "String with space"; // space is not valid
+myObj[obj] = "thisIsAObject"; // object is not valid
+      
+console.log(myObj)
+/* {
+  "type": "Dot syntax",
+  "date created": "String with space",
+  "[object Object]": "thisIsAObject"
+} */
+```
+
+可以通过存储在变量中的字符串来访问属性：
+
+```js
+let propertyName = "make";
+myCar[propertyName] = "Ford";
+```
+
+列表中的最后一个属性推荐以逗号结尾（虽然有点反常识）：
+
+```javascript
+let user = {
+  name: "John",
+  age: 30,
+}
+```
+
+> 这叫做尾随（trailing）或悬挂（hanging）逗号。这样便于我们添加、删除和移动属性，因为所有的行都是相似的。
+
+#### 计算属性
+
+当创建一个对象时，我们可以在对象字面量中使用方括号，叫做计算属性。
+
+```javascript
+let fruit = prompt("Which fruit to buy?", "apple");
+
+let bag = {
+  [fruit]: 5, // 属性名是从 fruit 变量中得到的
+};
+
+alert( bag.apple ); // 5 如果 fruit="apple"
+```
+
+本质上，这种写法和下面的语法效果相同：
+
+```javascript
+let fruit = prompt("Which fruit to buy?", "apple");
+let bag = {};
+bag[fruit] = 5;
+```
+
+我们可以在方括号中使用更复杂的表达式：
+
+```javascript
+let fruit = 'apple';
+let bag = {
+  [fruit + 'Computers']: 5 // bag.appleComputers = 5
+};
+```
+
+#### 属性值简写
+
+在实际开发中，通常用已存在的变量当做属性名。
+
+```javascript
+function makeUser(name, age) {
+  return {
+    name: name,
+    age: age,
+    // ……其他的属性
+  };
+}
+
+let user = makeUser("John", 30);
+alert(user.name); // John
+```
+
+可以用 `name` 来代替 `name:name` 像下面那样：
+
+```javascript
+function makeUser(name, age) {
+  return {
+    name, // 与 name: name 相同
+    age,  // 与 age: age 相同
+    // ...
+  };
+}
+```
+
+也可以把属性名简写方式和正常方式混用：
+
+```javascript
+let user = {
+  name,  // 与 name:name 相同
+  age: 30
+};
+```
+
+#### 属性名称限制
+
+我们已经知道，变量名不能是编程语言的某个保留字，如 “for”、“let”、“return” 等……
+
+但对象的属性名并不受此限制：
+
+```javascript
+// 这些属性都没问题
+let obj = {
+  for: 1,
+  let: 2,
+  return: 3
+};
+
+alert( obj.for + obj.let + obj.return );  // 6
+```
+
+简而言之，属性命名没有限制。属性名可以是任何字符串或者 symbol（一种特殊的标志符类型，将在后面介绍）。
+
+其他类型会被自动地转换为字符串。
+
+例如，当数字 `0` 被用作对象的属性的键时，会被转换为字符串 `"0"`：
+
+```javascript
+let obj = {
+  0: "test" // 等同于 "0": "test"
+};
+
+// 都会输出相同的属性（数字 0 被转为字符串 "0"）
+alert( obj["0"] ); // test
+alert( obj[0] ); // test (相同的属性)
+```
+
+这里有个小陷阱：一个名为 `__proto__` 的属性。我们不能将它设置为一个非对象的值：
+
+```javascript
+let obj = {};
+obj.__proto__ = 5; // 分配一个数字
+alert(obj.__proto__); // [object Object] —— 值为对象，与预期结果不同
+```
+
+我们从代码中可以看出来，把它赋值为 `5` 的操作被忽略了。
+
+#### 属性存在性测试
+
+相比于其他语言，JavaScript 的对象有一个需要注意的特性：能够被访问任何属性。即使属性不存在也不会报错！
+
+读取不存在的属性只会得到 undefined。
+
+```javascript
+let user = {};
+alert( user.noSuchProperty === undefined ); // true
+```
+
+也可以用 `in` 进行判断
+
+```javascript
+"key" in object
+```
+
+例如：
+
+```javascript
+let user = { name: "John", age: 30 };
+
+alert( "age" in user ); // true
+alert( "blabla" in user ); // false
+```
+
+请注意，`in` 的左边必须是属性名。通常是带引号的字符串或者变量。
+
+```javascript
+let user = { age: 30 };
+
+let key = "age";
+alert( key in user ); // true，属性 "age" 存在
+```
+
+大部分情况下与 `undefined` 进行比较来判断就可以了。但有一个例外情况，那就是属性存在，但存储的值是 `undefined` 的时候：
+
+```javascript
+let obj = {
+  test: undefined
+};
+
+alert( obj.test === undefined ); // true, but is not "true"
+alert( "test" in obj ); // true
+```
+
+#### "for..in" 
+
+为了遍历一个对象的所有键（key），可以使用一个特殊形式的循环：`for..in`。
+
+```javascript
+for (key in object) {
+  // 对此对象属性中的每个键执行的代码
+}
+```
+
+列出 `user` 所有的属性：
+
+```javascript
+let user = {
+  name: "John",
+  age: 30,
+  isAdmin: true
+};
+
+for (let key in user) {
+  alert( key );  // name, age, isAdmin
+  alert( user[key] ); // John, 30, true
+}
+```
+
+注意，所有的 “for” 结构体都允许我们在循环中定义变量，可以用其他属性名来替代 key。例如 `"for(let prop in obj)"` 也很常用。
+
+虽然使用 **for...in** 来迭代数组 Array元素听起来很诱人，但是它返回的东西除了数字索引外，还有可能是你自定义的属性名字。
+
+```js
+let arr = [3, 5, 7];
+arr.foo = "hello";
+
+for (let i in arr) {
+  console.log(i); // 输出 "0", "1", "2", "foo"
+}
+```
+
+> 枚举属性的方法:
+>
+> for...in 循环 该方法依次访问一个对象及其原型链中所有可枚举的属性。
+>
+> Object.keys(o)该方法返回对象 `o` 自身包含（不包括原型中）的所有可枚举属性的名称的数组。
+>
+> Object.getOwnPropertyNames(o)该方法返回对象 `o` 自身包含（不包括原型中）的所有属性 (无论是否可枚举) 的名称的数组。
