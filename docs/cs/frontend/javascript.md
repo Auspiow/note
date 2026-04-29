@@ -1130,6 +1130,74 @@ for (let i in arr) {
 >
 > Object.getOwnPropertyNames(o)该方法返回对象 `o` 自身包含（不包括原型中）的所有属性 (无论是否可枚举) 的名称的数组。
 
+#### 属性的排序
+
+属性有顺序吗？换句话说，如果我们遍历一个对象，我们获取属性的顺序是和属性添加时的顺序相同吗？这靠谱吗？
+
+简短的回答是：“有特别的顺序”：整数属性会被进行排序，其他属性则按照创建的顺序显示。
+
+例如，让我们考虑一个带有电话号码的对象：
+
+```javascript
+let codes = {
+  "49": "Germany",
+  "41": "Switzerland",
+  "44": "Great Britain",
+  // ..,
+  "1": "USA"
+};
+
+for(let code in codes) {
+  alert(code); // 1, 41, 44, 49
+}
+```
+
+因为这些电话号码是整数，所以它们以升序排列。所以我们看到的是 `1, 41, 44, 49`。
+
+**整数属性？那是什么？**
+
+这里的“整数属性”指的是一个可以在不做任何更改的情况下与一个整数进行相互转换的字符串。
+
+所以，`"49"` 是一个整数属性名，因为我们把它转换成整数，再转换回来，它还是一样的。但是 “+49” 和 “1.2” 就不行了：
+
+```javascript
+// Number(...) 显式转换为数字
+// Math.trunc 是内建的去除小数部分的方法。
+alert( String(Math.trunc(Number("49"))) ); // "49"，相同，整数属性
+alert( String(Math.trunc(Number("+49"))) ); // "49"，不同于 "+49" ⇒ 不是整数属性
+alert( String(Math.trunc(Number("1.2"))) ); // "1"，不同于 "1.2" ⇒ 不是整数属性
+```
+
+如果属性名不是整数，那它们就按照创建时的顺序来排序。
+
+```javascript
+let user = {
+  name: "John",
+  surname: "Smith"
+};
+user.age = 25; // 增加一个
+
+for (let prop in user) {
+  alert( prop ); // name, surname, age
+}
+```
+
+所以，为了解决电话号码的问题，我们可以使用非整数属性名来欺骗程序。只需要给每个键名加 `"+"` 前缀就行了。
+
+```javascript
+let codes = {
+  "+49": "Germany",
+  "+41": "Switzerland",
+  "+44": "Great Britain",
+  // ..,
+  "+1": "USA"
+};
+
+for (let code in codes) {
+  alert( +code ); // 49, 41, 44, 1
+}
+```
+
 
 
 
