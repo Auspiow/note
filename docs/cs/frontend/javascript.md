@@ -1198,6 +1198,302 @@ for (let code in codes) {
 }
 ```
 
+### 对象引用和复制
+
+对象与原始类型根本区别之一是，对象是“通过引用”存储和复制的，而原始类型：字符串、数字、布尔值等 —— 总是“作为一个整体”复制。
+
+这里我们将 `message` 复制到 `phrase`：
+
+```javascript
+let message = "Hello!";
+let phrase = message;
+```
+
+结果我们就有了两个独立的变量，每个都存储着字符串 `"Hello!"`。
+
+但是，对象不是这样的。
+
+**赋值了对象的变量存储的不是对象本身，而是对象在内存中的地址 —— 换句话说就是对该对象的“引用”。**
+
+```javascript
+let user = {
+  name: "John"
+};
+```
+
+实际中该对象被存储在内存中的某个位置，而变量 `user`保存的是对其的“引用”。
+
+**当一个对象变量被复制 —— 引用被复制，而该对象自身并没有被复制。**
+
+```javascript
+let user = { name: "John" };
+
+let admin = user; // 复制引用
+```
+
+现在我们有了两个变量，它们保存的都是对同一个对象的引用。
+
+我们可以通过其中任意变量来访问该对象并修改它的内容：
+
+```javascript
+let user = { name: 'John' };
+let admin = user;
+
+admin.name = 'Pete'; // 通过 "admin" 引用来修改
+alert(user.name); // 'Peter'
+```
+
+#### 通过引用来比较
+
+仅当两个对象为同一对象时，两者才相等。
+
+例如，这里 `a` 和 `b` 两个变量都引用同一个对象，所以它们相等：
+
+```javascript
+let a = {};
+let b = a; // 复制引用
+
+alert( a == b ); // true
+alert( a === b ); // true
+```
+
+而这里两个独立的对象则并不相等，即使它们看起来很像（都为空）：
+
+```javascript
+let a = {};
+let b = {}; // 两个独立的对象
+
+alert( a == b ); // false
+alert( a === b ); // false
+```
+
+#### 克隆与合并
+
+复制一个对象：创建一个新对象，通过遍历已有对象的属性，并在原始类型值的层面复制它们。
+
+```javascript
+let user = {
+  name: "John",
+  age: 30
+};
+
+let clone = {}; // 新的空对象
+
+for (let key in user) {
+  clone[key] = user[key];
+}
+
+clone.name = "Pete"; // 改变其中的数据
+alert( user.name ); // 'John'
+```
+
+我们也可以使用 `Object.assign` 方法来达成同样的效果。
+
+```javascript
+Object.assign(dest, [src1, src2, src3...])
+```
+
+- 第一个参数 `dest` 是指目标对象。
+- 更后面的参数 `src1, ..., srcN`（可按需传递多个参数）是源对象。
+- 该方法将所有源对象的属性拷贝到目标对象 `dest` 中。换句话说，从第二个开始的所有参数的属性都被拷贝到第一个参数的对象中。
+- 调用结果返回 `dest`。
+
+例如，我们可以用它来合并多个对象：
+
+```javascript
+let user = { name: "John" };
+
+let permissions1 = { canView: true };
+let permissions2 = { canEdit: true };
+
+Object.assign(user, permissions1, permissions2);
+
+// user = { name: "John", canView: true, canEdit: true }
+```
+
+如果被拷贝的属性的属性名已经存在，那么它会被覆盖：
+
+```javascript
+let user = { name: "John" };
+
+Object.assign(user, { name: "Pete" });
+
+alert(user.name); // user = { name: "Pete" }
+```
+
+我们也可以用 `Object.assign` 代替 `for..in` 循环来进行简单克隆：
+
+```javascript
+let user = {
+  name: "John",
+  age: 30
+};
+
+let clone = Object.assign({}, user);
+```
+
+它将 `user` 中的所有属性拷贝到了一个空对象中，并返回这个新的对象。
+
+#### 深层克隆
+
+属性可以是对其他对象的引用。
+
+```javascript
+let user = {
+  name: "John",
+  sizes: {
+    height: 182,
+    width: 50
+  }
+};
+
+alert( user.sizes.height ); // 182
+```
+
+现在这样拷贝 `clone.sizes = user.sizes` 已经不足够了，因为 `user.sizes` 是个对象，所以是“浅拷贝”。
+
+为了解决这个问题，并让 `user` 和 `clone` 成为两个真正独立的对象，我们应该使用一个拷贝循环来检查 `user[key]` 的每个值，如果它是一个对象，那么也复制它的结构。这就是所谓的“深拷贝”。
+
+我们可以使用递归来实现它。或者为了不重复造轮子，采用现有的实现，例如 lodash 库的 _.cloneDeep(obj) 。
+
+**使用 const 声明的对象也是可以被修改的**
+
+通过引用对对象进行存储的一个重要的副作用是声明为 `const` 的对象可以被修改。
+
+```javascript
+const user = {
+  name: "John"
+};
+
+user.name = "Pete";
+
+alert(user.name); // Pete
+```
+
+只有当我们尝试将 `user=...` 作为一个整体进行赋值时才会报错。
+
+
+
+### 垃圾回收
+
+#### 可达性（Reachability）
+
+JavaScript 中主要的内存管理概念是可达性。
+
+简而言之，“可达”值是那些以某种方式可访问或可用的值。它们被存储在内存中。
+
+这里列出固有的可达值的基本集合，这些值明显不能被释放。
+
+- 当前执行的函数，它的局部变量和参数。
+- 当前嵌套调用链上的其他函数、它们的局部变量和参数。
+- 全局变量。
+
+这些值被称作 **根（roots）**。
+
+如果一个值可以从根通过引用或者引用链进行访问，则认为该值是可达的。
+
+在 JavaScript 引擎中有一个被称作 垃圾回收器 的东西在后台执行，它监控所有对象的状态，删除掉那些已经不可达的。
+
+这里是一个最简单的例子：
+
+```javascript
+// user 具有对这个对象的引用
+let user = {
+  name: "John"
+};
+```
+
+这里的箭头描述了一个对象引用。全局变量 `user` 引用了对象 `{name："John"}`。
+
+如果 `user` 的值被重写了，这个引用就没了：
+
+```javascript
+user = null;
+```
+
+现在 John 变成不可达的了。因为没有引用了，就不能访问到它了。垃圾回收器会认为它是垃圾数据并进行回收，然后释放内存。
+
+那么如果把 `user` 的引用复制给 `admin`：
+
+```javascript
+let user = {
+  name: "John"
+};
+let admin = user;
+```
+
+现在执行刚刚的那个操作：
+
+```javascript
+user = null;
+```
+
+然后对象仍然可以被通过 `admin` 这个全局变量访问到，因此它必须被保留在内存中。如果我们又重写了 `admin`，对象就会被删除。
+
+#### 相互关联的对象
+
+现在来看一个更复杂的例子。这是个家庭：
+
+```javascript
+function marry(man, woman) {
+  woman.husband = man;
+  man.wife = woman;
+
+  return {
+    father: man,
+    mother: woman
+  }
+}
+
+let family = marry({name: "John"}, {name: "Ann"});
+```
+
+`marry` 函数通过让两个对象相互引用使它们“结婚”了，并返回了一个包含这两个对象的新对象。
+
+到目前为止，所有对象都是可达的。
+
+```javascript
+delete family.father;
+delete family.mother.husband;
+```
+
+现在所有的对象仍然都是可达的。
+
+但是，如果我们把这两个都删除，那么我们可以看到再也没有对 John 的引用了。所以，John 现在是不可达的，并且将被从内存中删除，同时 John 的所有数据也将变得不可达。
+
+#### 无法到达的岛屿
+
+几个对象相互引用，但外部没有对其任意对象的引用，这些对象也可能是不可达的，并被从内存中删除。
+
+```javascript
+family = null;
+```
+
+显而易见，John 和 Ann 仍然连着，都有传入的引用。但是，这样还不够。
+
+前面说的 `family` 对象已经不再与根相连，没有了外部对其的引用，所以它变成了一座“孤岛”，并且将被从内存中删除。
+
+#### 内部算法
+
+垃圾回收的基本算法被称为 “mark-and-sweep”。
+
+定期执行以下“垃圾回收”步骤：
+
+- 垃圾收集器找到所有的根，并“标记”（记住）它们。
+- 然后它遍历并“标记”来自它们的所有引用。
+- 然后它遍历标记的对象并标记它们的引用。所有被遍历到的对象都会被记住，以免将来再次遍历到同一个对象。
+- ……如此操作，直到所有可达的（从根部）引用都被访问到。
+- 没有被标记的对象都会被删除。
+
+一些优化建议：
+
+- **分代收集（Generational collection）**—— 对象被分成两组：“新的”和“旧的”。在典型的代码中，许多对象的生命周期都很短：它们出现、完成它们的工作并很快死去，因此在这种情况下跟踪新对象并将其从内存中清除是有意义的。那些长期存活的对象会变得“老旧”，并且被检查的频次也会降低。
+- **增量收集（Incremental collection）**—— 如果有许多对象，并且我们试图一次遍历并标记整个对象集，则可能需要一些时间，并在执行过程中带来明显的延迟。因此，引擎将现有的整个对象集拆分为多个部分，然后将这些部分逐一清除。这样就会有很多小型的垃圾收集，而不是一个大型的。这需要它们之间有额外的标记来追踪变化，但是这样会带来许多微小的延迟而不是一个大的延迟。
+- **闲时收集（Idle-time collection）**—— 垃圾收集器只会在 CPU 空闲时尝试运行，以减少可能对代码执行的影响。
+
+> 深入学习：
+> https://jayconrod.com/posts/55/a-tour-of-v8-garbage-collection
+
 
 
 
