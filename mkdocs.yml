@@ -32,7 +32,9 @@ nav:
 
 theme:
   name: material
-  language: zh  # 设置为中文
+  logo: images/favicon.svg
+  favicon: images/favicon.svg
+  language: zh
   palette: 
     # 自动切换深浅模式
     - media: "(prefers-color-scheme: light)"
