@@ -27,6 +27,8 @@ nav:
   - CS:
       - Frontend:
         - JavaScript: cs/frontend/javascript.md
+      - Rev:
+        - Android: cs/rev/Android.md
 
 theme:
   name: material
