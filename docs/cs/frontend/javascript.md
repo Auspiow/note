@@ -522,7 +522,7 @@ for (let i = 0; i < 3; i++) { ... }
 
 #### for循环特殊用法
 
-`for...in` 
+`for...in` ，详细用法参考 ["for...in"小章节](#forin)
 
 枚举属性名（key）
 
@@ -531,8 +531,6 @@ for (variable in object) {
   statements
 }
 ```
-
-> 虽然使用 **for...in** 来迭代数组 Array元素听起来很诱人，但是它返回的东西除了数字索引外，还有可能是你自定义的属性名字。
 
 `for...of`
 
@@ -549,10 +547,6 @@ for (variable of object) {
 ```js
 let arr = [3, 5, 7];
 arr.foo = "hello";
-
-for (let i in arr) {
-  console.log(i); // 输出 "0", "1", "2", "foo"
-}
 
 for (let i of arr) {
   console.log(i); // 输出 "3", "5", "7"，没有"hello"
@@ -840,6 +834,7 @@ alert( sum(1, 2) ); // 3
 函数声明的另外一个特殊的功能是它们的块级作用域。
 
 **严格模式下，当一个函数声明在一个代码块内时，它在该代码块内的任何位置都是可见的。但在代码块外不可见。**
+
 
 
 ## 对象
@@ -1198,6 +1193,8 @@ for (let code in codes) {
 }
 ```
 
+
+
 ### 对象引用和复制
 
 对象与原始类型根本区别之一是，对象是“通过引用”存储和复制的，而原始类型：字符串、数字、布尔值等 —— 总是“作为一个整体”复制。
@@ -1494,6 +1491,8 @@ family = null;
 > 深入学习：
 > https://jayconrod.com/posts/55/a-tour-of-v8-garbage-collection
 
+
+
 ### 对象方法
 
 在 JavaScript 中，行为（action）由属性中的函数来表示。
@@ -1652,6 +1651,148 @@ user.sayHi(); // Ilya
 
 这是箭头函数的一个特性，当我们并不想要一个独立的 `this`，反而想从外部上下文中获取时，它很有用。
 
+
+
+### 构造器和操作符 "new"
+
+常规的 `{...}` 语法允许创建一个对象。如果要创建很多类似的对象，可以使用构造函数和 `"new"` 操作符来实现。
+
+#### 构造函数
+
+构造函数在技术上是常规函数。不过有两个约定：
+
+1. 它们的命名以大写字母开头。
+2. 它们只能由 `"new"` 操作符来执行。
+
+```javascript
+function User(name) {
+  this.name = name;
+  this.isAdmin = false;
+}
+
+let user = new User("Jack");
+
+alert(user.name); // Jack
+alert(user.isAdmin); // false
+```
+
+这是构造器的主要目的 —— 实现可重用的对象创建代码。
+
+让我们再强调一遍 —— 从技术上讲，任何函数（除了箭头函数，它没有自己的 `this`）都可以用作构造器。即可以通过 `new` 来运行，它会执行上面的算法。“首字母大写”是一个共同的约定，以明确表示一个函数将被使用 `new` 来运行。
+
+**new function() { … }**
+
+如果我们有许多行用于创建单个复杂对象的代码，我们可以将它们封装在一个立即调用的构造函数中，像这样：
+
+```javascript
+// 创建一个函数并立即使用 new 调用它
+let user = new function() {
+  this.name = "John";
+  this.isAdmin = false;
+
+  // ……用于用户创建的其他代码
+};
+```
+
+这个构造函数不能被再次调用，因为它不保存在任何地方，只是被创建和调用。因此，这个技巧旨在封装构建单个对象的代码，而无需将来重用。
+
+#### 构造器模式测试：new.target
+
+在一个函数内部，我们可以使用 `new.target` 属性来检查它是否被使用 `new` 进行调用了。
+
+对于常规调用，它为 undefined，对于使用 `new` 的调用，则等于该函数：
+
+```javascript
+function User() {
+  alert(new.target);
+}
+
+User(); // undefined
+new User(); // function User { ... }
+```
+
+它可以被用在函数内部，判断该函数是通过 `new` 调用的“构造器模式”，还是“常规模式”。
+
+我们也可以让 `new` 调用和常规调用做相同的工作，像这样：
+
+```javascript
+function User(name) {
+  if (!new.target) {
+    return new User(name); // ……我会给你添加 new
+  }
+
+  this.name = name;
+}
+
+let john = User("John"); // 将调用重定向到新用户
+alert(john.name); // John
+```
+
+这种方法有时被用在库中以使语法更加灵活。这样人们在调用函数时，无论是否使用了 `new`，程序都能工作。
+
+不过，到处都使用它并不是一件好事，因为省略了 `new` 使得很难观察到代码中正在发生什么。而通过 `new` 我们都可以知道这创建了一个新对象。
+
+#### 构造器的 return
+
+通常，构造器没有 `return` 语句。它们的任务是将所有必要的东西写入 `this`，并自动转换为结果。
+
+但是，如果这有一个 `return` 语句，那么规则就简单了：
+
+- 如果 `return` 返回的是一个对象，则返回这个对象，而不是 `this`。
+- 如果 `return` 返回的是一个原始类型，则忽略。
+
+换句话说，带有对象的 `return` 返回该对象，在所有其他情况下返回 `this`。
+
+例如，这里 `return` 通过返回一个对象覆盖 `this`：
+
+```javascript
+function BigUser() {
+  this.name = "John";
+  return { name: "Godzilla" };  // <-- 返回这个对象
+}
+
+alert( new BigUser().name );  // Godzilla
+```
+
+这里有一个 `return` 为空的例子：
+
+```javascript
+function SmallUser() {
+  this.name = "John";
+  return;
+}
+
+alert( new SmallUser().name );  // John
+```
+
+通常构造器没有 `return` 语句。这里我们主要为了完整性而提及返回对象的特殊行为。
+
+**省略括号**（不是好的风格）
+
+```javascript
+let user = new User; // <-- 没有参数
+// 等同于
+let user = new User();
+```
+
+#### 构造器中的方法
+
+构造函数可能有一些参数，这些参数定义了如何构造对象以及要放入什么。
+
+当然，不仅可以将属性添加到 `this` 中，还可以添加方法。
+
+```javascript
+function User(name) {
+  this.name = name;
+
+  this.sayHi = function() {
+    alert( "My name is: " + this.name );
+  };
+}
+
+let john = new User("John");
+john.sayHi(); // My name is: John
+```
 
 
 
