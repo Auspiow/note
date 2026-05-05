@@ -1,5 +1,7 @@
 site_name: Auspiow's note
 site_url: https://auspiow.github.io/note/
+repo_url: https://github.com/auspiow/note
+repo_name: auspiow/note
 
 plugins:
   - search
