@@ -24,6 +24,7 @@ nav:
       - 感知、通信与控制:
         - 传感器: ZJU-Design/感知、通信与控制/传感器.md
         - 通信原理: ZJU-Design/感知、通信与控制/通信原理.md
+        - 蓝牙通信: ZJU-Design/感知、通信与控制/蓝牙通信.md
   - CTF:
       - Writeups:
         - AliyunCTF 2026: ctf/writeups/Aliyun2026.md
