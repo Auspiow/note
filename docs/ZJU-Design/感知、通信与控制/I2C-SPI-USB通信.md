@@ -6,7 +6,7 @@
 
 为了解决早期电视机内部芯片间通信布线复杂，并行总线占用引脚多、PCB面积大的问题，飞利浦半导体提出两线式串行总线。
 
- 仅使用 SDA 数据线与 SCL 时钟线，多设备共享同一总线，通过地址区分
+仅使用 SDA 数据线与 SCL 时钟线，多设备共享同一总线，通过地址区分
 
 | 发展阶段 | 1980     | 1992     | 1998     | 2007      | 2010s               | 2010s        |
 | -------- | -------- | -------- | -------- | --------- | ------------------- | ------------ |
@@ -86,6 +86,7 @@ void setup() {
 }
 
 float readTemperature() {
+  // 输入设备地址
   Wire.beginTransmission(SHT20_ADDR);
   Wire.write(0xF3);
   Wire.endTransmission();
@@ -95,6 +96,7 @@ float readTemperature() {
   Wire.requestFrom(SHT20_ADDR, 3);
   if (Wire.available() >= 3) {
     uint16_t raw = (Wire.read() << 8) | Wire.read();
+    // 最后两位是状态位，为了不影响数据选择清零
     raw &= 0xFFFC;
     return -46.85 + 175.72 * raw / 65536.0;
   }
@@ -161,9 +163,6 @@ SPI 标准库常用函数简表
 | SPI.transfer16()       | 连续发送并接收 2 字节（16 位）数据。             |
 | SPI.endTransaction()   | 结束当前的 SPI 事务，释放总线配置。              |
 | SPI.end()              | 关闭 SPI 外设，停止总线时钟。                    |
-| SPI.setBitOrder()      | 已过时：设置高位优先 (MSB) 或低位优先 (LSB)。    |
-| SPI.setDataMode()      | 已过时：设置 SPI 模式（0、1、2 或 3）。          |
-| SPI.setClockDivider()  | 已过时：设置相对于系统主频的时钟分频因子。       |
 
 读取SPI设备寄存器
 
