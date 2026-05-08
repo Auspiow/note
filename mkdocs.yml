@@ -38,6 +38,7 @@ markdown_extensions:
 
 extra_css:
   - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css
+  - stylesheets/extra.css
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js
   - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js
@@ -45,6 +46,9 @@ extra_javascript:
 
 theme:
   name: material
+  font:
+    text: Noto Sans SC
+    code: JetBrains Mono
   logo: images/favicon.svg
   favicon: images/favicon.svg
   language: zh
@@ -65,7 +69,6 @@ theme:
         help: 切换到浅色模式
   features:
     - navigation.tabs
-    - navigation.sections
     - navigation.indexes
     - search.suggest
     - search.highlight
