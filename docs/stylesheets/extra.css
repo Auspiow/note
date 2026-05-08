@@ -7,3 +7,27 @@
 html {
   font-size: 128%;
 }
+
+/* 增大 h3 / h4 的字号并增加上下间距 */
+/* 仅影响正文中的标题，保持响应式 */
+.md-typeset h3,
+h3 {
+  font-size: 1.35rem;
+  margin-top: 1.4em;
+  margin-bottom: 0.9em;
+  line-height: 1.28;
+}
+
+.md-typeset h4,
+h4 {
+  font-size: 1.15rem;
+  margin-top: 1.2em;
+  margin-bottom: 0.8em;
+  line-height: 1.25;
+}
+
+/* 更明显的间隔用于章节分隔（如需要可以调整） */
+.md-typeset h3 + p,
+h3 + p {
+  margin-top: 0.6em;
+}
