@@ -20,29 +20,28 @@ plugins:
       page_template: templates/page_statistics.md
       words_per_minute: 300
       codelines_per_minute: 80
-nav:
-  - Home: index.md
-  - ZJU-Design:
-      - 首页: ZJU-Design/index.md
-      - 感知、通信与控制:
-        - 传感器: ZJU-Design/感知、通信与控制/传感器.md
-        - 通信概述: ZJU-Design/感知、通信与控制/通信概述.md
-        - 蓝牙通信: ZJU-Design/感知、通信与控制/蓝牙通信.md
-        - WiFi与以太网: ZJU-Design/感知、通信与控制/WiFi与以太网.md
-        - I2C-SPI-USB通信: ZJU-Design/感知、通信与控制/I2C-SPI-USB通信.md
-  - CTF:
-      - Writeups:
-        - AliyunCTF 2026: ctf/writeups/Aliyun2026.md
-        - ZJUBus-Web: ctf/writeups/zjubus-web.md
-  - CS:
-      - Frontend:
-        - JavaScript: cs/frontend/javascript.md
-      - Rev:
-        - Android: cs/rev/Android.md
-        - Web-JS: cs/rev/Web-JS.md
-      - Assembly:
-        - x86: cs/assembly/x86.md
-        - wasm: cs/assembly/Wasm.md
+
+markdown_extensions:
+  - nl2br
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true
+      smart_dollar: false
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js
+  - javascripts/katex.js
 
 theme:
   name: material
@@ -50,7 +49,6 @@ theme:
   favicon: images/favicon.svg
   language: zh
   palette: 
-    # 自动切换深浅模式
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: grey
@@ -66,18 +64,32 @@ theme:
         icon: material/brightness-4
         help: 切换到浅色模式
   features:
-    - navigation.tabs      # 启用顶部导航栏
-    - navigation.sections  # 侧边栏分组显示
-    - navigation.indexes    # 章节标题可点击到首页
-    - search.suggest       # 搜索建议
-    - search.highlight     # 搜索关键词高亮
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
 
-markdown_extensions:
-  - admonition          # 提示框
-  - pymdownx.details    # 折叠框
-  - pymdownx.highlight:
-      pygments_style: one-dark
-      pygments_lang_class: true
-  - pymdownx.superfences # 支持代码块嵌套
-  - pymdownx.tasklist:
-      custom_checkbox: true
+nav:
+  - Home: index.md
+  - ZJU-Design:
+      - 首页: ZJU-Design/index.md
+      - 感知、通信与控制:
+          - 传感器: ZJU-Design/感知、通信与控制/传感器.md
+          - 通信概述: ZJU-Design/感知、通信与控制/通信概述.md
+          - 蓝牙通信: ZJU-Design/感知、通信与控制/蓝牙通信.md
+          - WiFi与以太网: ZJU-Design/感知、通信与控制/WiFi与以太网.md
+          - I2C-SPI-USB通信: ZJU-Design/感知、通信与控制/I2C-SPI-USB通信.md
+  - CTF:
+      - Writeups:
+          - AliyunCTF 2026: ctf/writeups/Aliyun2026.md
+          - ZJUBus-Web: ctf/writeups/zjubus-web.md
+  - CS:
+      - Frontend:
+          - JavaScript: cs/frontend/javascript.md
+      - Rev:
+          - Android: cs/rev/Android.md
+          - Web-JS: cs/rev/Web-JS.md
+      - Assembly:
+          - x86: cs/assembly/x86.md
+          - wasm: cs/assembly/Wasm.md
