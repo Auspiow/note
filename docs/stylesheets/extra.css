@@ -1,4 +1,9 @@
 :root {
-  --md-typeset-font-size: 1rem;
+  --md-text-font: "JetBrains Mono", "LXGW WenKai Screen";
+  --md-code-font: "JetBrains Mono";
   --md-typeset-line-height: 1.8;
+}
+
+html {
+  font-size: 137.5%;
 }
