@@ -1653,7 +1653,7 @@ user.sayHi(); // Ilya
 
 
 
-### 构造器和操作符 "new"
+### 构造器和 "new"
 
 常规的 `{...}` 语法允许创建一个对象。如果要创建很多类似的对象，可以使用构造函数和 `"new"` 操作符来实现。
 
@@ -1793,6 +1793,178 @@ function User(name) {
 let john = new User("John");
 john.sayHi(); // My name is: John
 ```
+
+
+
+### 可选链 "?."
+
+可选链 `?.` 是一种访问嵌套对象属性的安全的方式。即使中间的属性不存在，也不会出现错误。
+
+#### 不存在的属性
+
+假设有很多个 `user` 对象，大多数用户的地址都存储在 `user.address` 中，街道地址存储在 `user.address.street` 中，但有些用户没有提供这些信息。
+
+在这种情况下，当我们尝试获取 `user.address.street`，而该用户恰好没提供地址信息，我们则会收到一个错误：
+
+```javascript
+let user = {}; // 一个没有 "address" 属性的 user 对象
+
+alert(user.address.street); // Error!
+```
+
+这是预期的结果。JavaScript 的工作原理就是这样的。因为 `user.address` 为 `undefined`，尝试读取 `user.address.street` 会失败，并收到一个错误。
+
+但是在很多实际场景中，我们更希望得到的是 `undefined`（表示没有 `street` 属性）而不是一个错误。
+
+在 Web 开发中，我们可以使用特殊的方法调用（例如 `document.querySelector('.elem')`）以对象的形式获取一个网页元素，如果没有这种对象，则返回 `null`。
+
+```javascript
+// 如果 document.querySelector('.elem') 的结果为 null，则这里不存在这个元素
+let html = document.querySelector('.elem').innerHTML; // 如果 document.querySelector('.elem') 的结果为 null，则会出现错误
+```
+
+同样，如果该元素不存在，则访问 `null` 的 `.innerHTML` 属性时会报错。在某些情况下，当元素的缺失是没问题的时候，我们希望避免出现这种错误，而是接受 `html = null` 作为结果。
+
+我们如何实现这一点呢？
+
+可能最先想到的方案是在访问该值的属性之前，使用 `if` 或条件运算符 `?` 对该值进行检查，像这样：
+
+```javascript
+let user = {};
+
+alert(user.address ? user.address.street : undefined);
+```
+
+这样可以，这里就不会出现错误了……但是不够优雅。就像你所看到的，`"user.address"` 在代码中出现了两次。
+
+对于嵌套层次更深的属性，代码会变得更丑，因为需要更多的重复。
+
+例如，让我们以相同的方式尝试获取 `user.address.street.name`。
+
+```javascript
+let user = {}; // user 没有 address 属性
+
+alert(user.address ? user.address.street ? user.address.street.name : null : null);
+```
+
+这样就太难看了，并且这可能导致写出来的代码很难让别人理解。
+
+这里有一种更好的实现方式，就是使用 `&&` 运算符：
+
+```javascript
+let user = {}; // user 没有 address 属性
+
+alert( user.address && user.address.street && user.address.street.name ); // undefined（不报错）
+```
+
+依次对整条路径上的属性使用与运算进行判断，以确保所有节点是存在的（如果不存在，则停止计算），但仍然不够优雅。
+
+这就是为什么可选链 `?.` 被加入到了 JavaScript 这门编程语言中。那就是彻底地解决以上所有问题！
+
+#### 可选链
+
+如果可选链 `?.` 前面的值为 `undefined` 或者 `null`，它会停止运算并返回 `undefined`。（短路效应）
+
+换句话说，例如 `value?.prop`：
+
+- 如果 `value` 存在，则结果与 `value.prop` 相同，
+- 否则（当 `value` 为 `undefined/null` 时）则返回 `undefined`。
+
+下面这是一种使用 `?.` 安全地访问 `user.address.street` 的方式：
+
+```javascript
+let user = {}; // user 没有 address 属性
+
+alert( user?.address?.street ); // undefined（不报错）
+```
+
+代码简洁明了，也不用重复写好几遍属性名。
+
+这里是一个结合 `document.querySelector` 使用的示例：
+
+```javascript
+let html = document.querySelector('.elem')?.innerHTML; // 如果没有符合的元素，则为 undefined
+```
+
+即使 对象 `user` 不存在，使用 `user?.address` 来读取地址也没问题：
+
+```javascript
+let user = null;
+
+alert( user?.address ); // undefined
+alert( user?.address.street ); // undefined
+```
+
+请注意：`?.` 语法使其前面的值成为可选值，但不会对其后面的起作用。
+
+例如，在 `user?.address.street.name` 中，`?.` 允许 `user` 为 `null/undefined`（在这种情况下会返回 `undefined`）也不会报错，但这仅对于 `user`。更深层次的属性是通过常规方式访问的。如果我们希望它们中的一些也是可选的，那么我们需要使用更多的 `?.` 来替换 `.`。
+
+**不要过度使用可选链**
+
+我们应该只将 `?.` 使用在一些东西可以不存在的地方。
+
+例如，如果根据我们的代码逻辑，`user` 对象必须存在，但 `address` 是可选的，那么我们应该这样写 `user.address?.street`，而不是这样 `user?.address?.street`。
+
+那么，如果 `user` 恰巧为 undefined，我们会看到一个编程错误并修复它。否则，滥用 `?.`会导致代码中的错误在不应该被消除的地方消除了，这会导致调试更加困难。
+
+**`?.` 前的变量必须已声明**
+
+如果未声明变量 `user`，那么 `user?.anything` 会触发一个错误：
+
+```javascript
+// ReferenceError: user is not defined
+user?.address;
+```
+
+`?.` 前的变量必须已声明（例如 `let/const/var user` 或作为一个函数参数）。可选链仅适用于已声明的变量。
+
+#### 其它变体
+
+可选链 `?.` 不是一个运算符，而是一个特殊的语法结构。它还可以与函数和方括号一起使用。
+
+例如，将 `?.()` 用于调用一个可能不存在的函数。
+
+在下面这段代码中，有些用户具有 `admin` 方法，而有些没有：
+
+```javascript
+let userAdmin = {
+  admin() {
+    alert("I am admin");
+  }
+};
+
+let userGuest = {};
+
+userAdmin.admin?.(); // I am admin
+userGuest.admin?.(); // 啥都没发生（没有这样的方法）
+```
+
+在这两行代码中，我们首先使用点符号（`userAdmin.admin`）来获取 `admin` 属性，因为我们假定对象 `userAdmin` 存在，因此可以安全地读取它。
+
+然后 `?.()` 会检查它左边的部分：如果 `admin` 函数存在，那么就调用运行它（对于 `userAdmin`）。否则（对于 `userGuest`）运算停止，没有报错。
+
+如果我们想使用方括号 `[]` 而不是点符号 `.` 来访问属性，语法 `?.[]` 也可以使用。跟前面的例子类似，它允许从一个可能不存在的对象上安全地读取属性。
+
+```javascript
+let key = "firstName";
+
+let user1 = {
+  firstName: "John"
+};
+
+let user2 = null;
+
+alert( user1?.[key] ); // John
+alert( user2?.[key] ); // undefined
+```
+
+此外，我们还可以将 `?.` 跟 `delete` 一起使用：
+
+```javascript
+delete user?.name; // 如果 user 存在，则删除 user.name
+```
+
+**我们可以使用 `?.` 来安全地读取或删除，但不能写入**（不能用在赋值语句的左侧）
 
 
 
