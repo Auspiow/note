@@ -2,13 +2,13 @@
 
 以下知识参考自 [现代 JavaScript 教程](https://zh.javascript.info/) 以及 [MDN开发者手册](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript)
 
-其实我一开始直接看的MDN手册，但是觉得上面的知识比较“官方”，不易消化理解。后来遇到了“现代JavaScript教程”，将知识贯通了起来，于是有了这篇笔记。笔记的主要脉络也是与“现代JavaScript教程”保持一致，但是略有修改。
+一开始直接看的MDN手册，但是上面的知识比较“官方”，适合查阅但不易消化理解。后来遇到了“现代JavaScript教程”，将知识贯通了起来，于是有了这篇笔记。笔记的主要脉络也是与“现代JavaScript教程”保持一致，但是略有修改（精简）。
 
 ## 基础知识
 
 ### 变量
 
-* var：老旧的变量声明方式。一般情况下不会使用它。变量的声明被提升为undefined。
+* var：老旧的变量声明方式，一般情况下不会使用它。变量的声明被提升为undefined。
 
 * let：用于声明可重新赋值的块级作用域局部变量，会出现暂时性死区。
 
@@ -1820,12 +1820,10 @@ alert(user.address.street); // Error!
 
 ```javascript
 // 如果 document.querySelector('.elem') 的结果为 null，则这里不存在这个元素
-let html = document.querySelector('.elem').innerHTML; // 如果 document.querySelector('.elem') 的结果为 null，则会出现错误
+let html = document.querySelector('.elem').innerHTML; // 会出现错误
 ```
 
 同样，如果该元素不存在，则访问 `null` 的 `.innerHTML` 属性时会报错。在某些情况下，当元素的缺失是没问题的时候，我们希望避免出现这种错误，而是接受 `html = null` 作为结果。
-
-我们如何实现这一点呢？
 
 可能最先想到的方案是在访问该值的属性之前，使用 `if` 或条件运算符 `?` 对该值进行检查，像这样：
 
@@ -1835,9 +1833,7 @@ let user = {};
 alert(user.address ? user.address.street : undefined);
 ```
 
-这样可以，这里就不会出现错误了……但是不够优雅。就像你所看到的，`"user.address"` 在代码中出现了两次。
-
-对于嵌套层次更深的属性，代码会变得更丑，因为需要更多的重复。
+这样可以，但是不够优雅。对于嵌套层次更深的属性，代码会变得更丑，因为需要更多的重复。
 
 例如，让我们以相同的方式尝试获取 `user.address.street.name`。
 
@@ -1857,7 +1853,7 @@ let user = {}; // user 没有 address 属性
 alert( user.address && user.address.street && user.address.street.name ); // undefined（不报错）
 ```
 
-依次对整条路径上的属性使用与运算进行判断，以确保所有节点是存在的（如果不存在，则停止计算），但仍然不够优雅。
+依次对整条路径上的属性使用与运算进行判断，以确保所有节点是存在的（如果不存在，则停止计算），这是一种比较常见的用法，它比可选链的容错更高，但不是最优雅的。
 
 这就是为什么可选链 `?.` 被加入到了 JavaScript 这门编程语言中。那就是彻底地解决以上所有问题！
 
@@ -1874,11 +1870,8 @@ alert( user.address && user.address.street && user.address.street.name ); // und
 
 ```javascript
 let user = {}; // user 没有 address 属性
-
-alert( user?.address?.street ); // undefined（不报错）
+alert( user?.address?.street ); // undefined
 ```
-
-代码简洁明了，也不用重复写好几遍属性名。
 
 这里是一个结合 `document.querySelector` 使用的示例：
 
@@ -1895,19 +1888,13 @@ alert( user?.address ); // undefined
 alert( user?.address.street ); // undefined
 ```
 
-请注意：`?.` 语法使其前面的值成为可选值，但不会对其后面的起作用。
-
-例如，在 `user?.address.street.name` 中，`?.` 允许 `user` 为 `null/undefined`（在这种情况下会返回 `undefined`）也不会报错，但这仅对于 `user`。更深层次的属性是通过常规方式访问的。如果我们希望它们中的一些也是可选的，那么我们需要使用更多的 `?.` 来替换 `.`。
+`?.` 语法使其前面的值成为可选值，但不会对其后面的起作用。
 
 **不要过度使用可选链**
 
-我们应该只将 `?.` 使用在一些东西可以不存在的地方。
+尽量将 `?.` 使用在一些东西可以不存在的地方，如果某个属性必须存在就不应该使用，否则看不到报错，导致调试更加困难。
 
-例如，如果根据我们的代码逻辑，`user` 对象必须存在，但 `address` 是可选的，那么我们应该这样写 `user.address?.street`，而不是这样 `user?.address?.street`。
-
-那么，如果 `user` 恰巧为 undefined，我们会看到一个编程错误并修复它。否则，滥用 `?.`会导致代码中的错误在不应该被消除的地方消除了，这会导致调试更加困难。
-
-**`?.` 前的变量必须已声明**
+**变量必须已声明**
 
 如果未声明变量 `user`，那么 `user?.anything` 会触发一个错误：
 
@@ -1916,13 +1903,9 @@ alert( user?.address.street ); // undefined
 user?.address;
 ```
 
-`?.` 前的变量必须已声明（例如 `let/const/var user` 或作为一个函数参数）。可选链仅适用于已声明的变量。
-
 #### 其它变体
 
 可选链 `?.` 不是一个运算符，而是一个特殊的语法结构。它还可以与函数和方括号一起使用。
-
-例如，将 `?.()` 用于调用一个可能不存在的函数。
 
 在下面这段代码中，有些用户具有 `admin` 方法，而有些没有：
 
@@ -1936,27 +1919,14 @@ let userAdmin = {
 let userGuest = {};
 
 userAdmin.admin?.(); // I am admin
-userGuest.admin?.(); // 啥都没发生（没有这样的方法）
+userGuest.admin?.(); // nothing happen
 ```
 
 在这两行代码中，我们首先使用点符号（`userAdmin.admin`）来获取 `admin` 属性，因为我们假定对象 `userAdmin` 存在，因此可以安全地读取它。
 
 然后 `?.()` 会检查它左边的部分：如果 `admin` 函数存在，那么就调用运行它（对于 `userAdmin`）。否则（对于 `userGuest`）运算停止，没有报错。
 
-如果我们想使用方括号 `[]` 而不是点符号 `.` 来访问属性，语法 `?.[]` 也可以使用。跟前面的例子类似，它允许从一个可能不存在的对象上安全地读取属性。
-
-```javascript
-let key = "firstName";
-
-let user1 = {
-  firstName: "John"
-};
-
-let user2 = null;
-
-alert( user1?.[key] ); // John
-alert( user2?.[key] ); // undefined
-```
+ `?.[]` 也可以使用，它允许从一个可能不存在的对象上安全地读取属性。
 
 此外，我们还可以将 `?.` 跟 `delete` 一起使用：
 
@@ -1964,7 +1934,490 @@ alert( user2?.[key] ); // undefined
 delete user?.name; // 如果 user 存在，则删除 user.name
 ```
 
-**我们可以使用 `?.` 来安全地读取或删除，但不能写入**（不能用在赋值语句的左侧）
+可以用 `?.` 来安全地读取或删除，但不能用来写入（不能用出现在赋值语句的左侧）
+
+
+
+### symbol 类型
+
+“symbol” 值表示唯一的标识符。
+
+可以使用 `Symbol()` 来创建这种类型的值：
+
+```javascript
+let id = Symbol();
+```
+
+创建时，我们可以给 symbol 一个描述（也称为 symbol 名），这在代码调试时非常有用：
+
+```javascript
+// id 是描述为 "id" 的 symbol
+let id = Symbol("id");
+```
+
+symbol 保证是唯一的。
+
+```javascript
+let id1 = Symbol("id");
+let id2 = Symbol("id");
+alert(id1 == id2); // false
+```
+
+JavaScript 的 symbol和 Ruby 或者其他有 “symbol” 的语言是不同的。
+
+**symbol 不会被自动转换为字符串**
+
+JavaScript 中的大多数值都支持字符串的隐式转换。例如，我们可以 `alert` 任何值，都可以生效。symbol 比较特殊，它不会被自动转换。
+
+例如，这个 `alert` 将会提示出错：
+
+```javascript
+let id = Symbol("id");
+alert(id); // 类型错误：无法将 symbol 值转换为字符串。
+```
+
+这是一种防止混乱的“语言保护”，因为字符串和 symbol 有本质上的不同，不应该意外地将它们转换成另一个。
+
+如果我们真的想显示一个 symbol，我们需要在它上面调用 `.toString()`，如下所示：
+
+```javascript
+let id = Symbol("id");
+alert(id.toString()); // Symbol(id)，现在它有效了
+```
+
+或者获取 `symbol.description` 属性，只显示描述（description）：
+
+```javascript
+let id = Symbol("id");
+alert(id.description); // id
+```
+
+#### “隐藏”属性
+
+symbol 允许我们创建对象的“隐藏”属性，代码的任何其他部分都不能意外访问或重写这些属性。
+
+例如，如果我们使用的是属于第三方代码的 `user` 对象，我们想要给它们添加一些标识符。
+
+我们可以给它们使用 symbol 键：
+
+```javascript
+let user = { // 属于另一个代码
+  name: "John"
+};
+
+let id = Symbol("id");
+
+user[id] = 1;
+
+alert( user[id] ); // 我们可以使用 symbol 作为键来访问数据
+```
+
+使用 `Symbol("id")` 作为键，比起用字符串 `"id"` 来有什么好处呢？
+
+由于 `user` 对象属于另一个代码库，所以向它们添加字段是不安全的，因为我们可能会影响代码库中的其他预定义行为。但 symbol 属性不会被意外访问到。第三方代码不会知道新定义的 symbol，因此将 symbol 添加到 `user` 对象是安全的。
+
+标识符之间不会有冲突，因为 symbol 总是不同的，即使它们有相同的名字。
+
+但如果我们出于同样的目的，使用字符串 `"id"` 而不是用 symbol，那么就会出现冲突：
+
+```javascript
+let user = { name: "John" };
+// our script
+user.id = "Our id value";
+// another script
+user.id = "Their id value"
+// pong！无意中被另一个脚本重写了 id！
+```
+
+#### 对象字面量中的 symbol
+
+如果我们要在对象字面量 `{...}` 中使用 symbol，则需要使用方括号把它括起来。
+
+就像这样：
+
+```javascript
+let id = Symbol("id");
+
+let user = {
+  name: "John",
+  [id]: 123
+};
+```
+
+#### symbol 在 for…in 中会被跳过
+
+symbol 属性不参与 `for..in` 循环。
+
+`Object.keys(user)`也会忽略它们。这是一般“隐藏符号属性”原则的一部分。如果另一个脚本或库遍历我们的对象，它不会意外地访问到符号属性。
+
+但是`Object.assign`会同时复制字符串和 symbol 属性：
+
+```javascript
+let id = Symbol("id");
+let user = {
+  [id]: 123
+};
+
+let clone = Object.assign({}, user);
+alert( clone[id] ); // 123
+```
+
+#### 全局 symbol
+
+正如我们所看到的，通常所有的 symbol 都是不同的，即使它们有相同的名字。但有时我们想要名字相同的 symbol 具有相同的实体。例如，应用程序的不同部分想要访问的 symbol `"id"` 指的是完全相同的属性。
+
+为了实现这一点，这里有一个 **全局 symbol 注册表**。我们可以在其中创建 symbol 并在稍后访问它们，它可以确保每次访问相同名字的 symbol 时，返回的都是相同的 symbol。
+
+要从注册表中读取（不存在则创建）symbol，请使用 `Symbol.for(key)`。
+
+该调用会检查全局注册表，如果有一个描述为 `key` 的 symbol，则返回该 symbol，否则将创建一个新 symbol，并通过给定的 `key` 将其存储在注册表中。
+
+```javascript
+// 从全局注册表中读取
+let id = Symbol.for("id"); // 如果该 symbol 不存在，则创建它
+let idAgain = Symbol.for("id");
+alert( id === idAgain ); // true
+```
+
+注册表内的 symbol 被称为 **全局 symbol**。如果我们想要一个应用程序范围内的 symbol，可以在代码中随处访问。
+
+**这听起来像 Ruby**
+
+#### Symbol.keyFor
+
+我们已经看到，对于全局 symbol，`Symbol.for(key)` 按名字返回一个 symbol。相反，通过全局 symbol 返回一个名字，我们可以使用 `Symbol.keyFor(sym)`：
+
+```javascript
+// 通过 name 获取 symbol
+let sym = Symbol.for("name");
+let sym2 = Symbol.for("id");
+
+// 通过 symbol 获取 name
+alert( Symbol.keyFor(sym) ); // name
+alert( Symbol.keyFor(sym2) ); // id
+```
+
+`Symbol.keyFor` 内部使用全局 symbol 注册表来查找 symbol 的键。所以它不适用于非全局 symbol。如果 symbol 不是全局的，它将无法找到它并返回 `undefined`。
+
+但是，所有 symbol 都具有 `description` 属性。
+
+```javascript
+let globalSymbol = Symbol.for("name");
+let localSymbol = Symbol("name");
+
+alert( Symbol.keyFor(globalSymbol) ); // name
+alert( Symbol.keyFor(localSymbol) ); // undefined
+
+alert( localSymbol.description ); // name
+```
+
+#### 系统 symbol
+
+JavaScript 内部有很多“系统” symbol，我们可以使用它们来微调对象的各个方面。
+
+它们都被列在了众所周知的 symbol 表的规范中：
+
+- `Symbol.hasInstance`
+
+- `Symbol.isConcatSpreadable`
+
+- `Symbol.iterator`
+
+- `Symbol.toPrimitive`
+
+  ……等等。
+
+
+
+### 对象 —— 原始值转换
+
+#### hint
+
+类型转换在各种情况下有三种变体。它们被称为 “hint”，在 [规范](https://tc39.github.io/ecma262/#sec-toprimitive) 所述：
+
+`"string"`
+
+对象到字符串的转换，当我们对期望一个字符串的对象执行操作时，如 “alert”：
+
+```js
+// 输出
+alert(obj);
+
+// 将对象作为属性键
+anotherObj[obj] = 123;
+```
+
+`"number"`
+
+对象到数字的转换，例如当我们进行数学运算时：
+
+```js
+// 显式转换
+let num = Number(obj);
+
+// 数学运算（除了二元加法）
+let n = +obj; // 一元加法
+let delta = date1 - date2;
+
+// 小于/大于的比较
+let greater = user1 > user2;
+```
+
+还有像 `<` 和 `>` 这样的比较运算符
+
+`"default"`
+
+在少数情况下发生，当运算符“不确定”期望值的类型时。
+
+例如，二元加法 `+` 可用于字符串（连接），也可以用于数字（相加）。因此，当二元加法得到对象类型的参数时，它将依据 `"default"` hint 来对其进行转换。
+
+此外，如果对象被用于与字符串、数字或 symbol 进行 `==` 比较，这时到底应该进行哪种转换也不是很明确，因此使用 `"default"` hint。
+
+```js
+// 二元加法使用默认 hint
+let total = obj1 + obj2;
+
+// obj == number 使用默认 hint
+if (user == 1) { ... };
+```
+
+**为了进行转换，JavaScript 尝试查找并调用三个对象方法：**
+
+1. 调用 `obj[Symbol.toPrimitive](hint)` —— 带有 symbol 键 `Symbol.toPrimitive`（系统 symbol）的方法，如果这个方法存在的话，
+2. 否则，如果 hint 是 `"string"` —— 尝试调用 `obj.toString()` 或 `obj.valueOf()`，无论哪个存在。
+3. 否则，如果 hint 是 `"number"` 或 `"default"` —— 尝试调用 `obj.valueOf()` 或 `obj.toString()`，无论哪个存在。
+
+#### Symbol.toPrimitive
+
+我们从第一个方法开始。有一个名为 `Symbol.toPrimitive` 的内建 symbol，它被用来给转换方法命名，像这样：
+
+```javascript
+obj[Symbol.toPrimitive] = function(hint) {
+  // 这里是将此对象转换为原始值的代码
+  // hint = "string"、"number" 或 "default"
+}
+```
+
+如果 `Symbol.toPrimitive` 方法存在，则它会被用于所有 hint，无需更多其他方法。
+
+例如，这里 `user` 对象实现了它：
+
+```javascript
+let user = {
+  name: "John",
+  money: 1000,
+
+  [Symbol.toPrimitive](hint) {
+    alert(`hint: ${hint}`);
+    return hint == "string" ? `{name: "${this.name}"}` : this.money;
+  }
+};
+
+alert(user); // hint: string -> {name: "John"}
+alert(+user); // hint: number -> 1000
+alert(user + 500); // hint: default -> 1500
+```
+
+从代码中我们可以看到，根据转换的不同，`user` 变成一个自描述字符串或者一个金额。`user[Symbol.toPrimitive]` 方法处理了所有的转换情况。
+
+#### toString/valueOf
+
+如果没有 `Symbol.toPrimitive`，引擎将尝试寻找 `toString` 和 `valueOf` 方法：
+
+- 对于 `"string"` hint：调用 `toString` 方法，如果它不存在，则调用 `valueOf` 方法。
+- 其他 hint：调用 `valueOf` 方法，如果它不存在，则调用 `toString` 方法（对于数学运算，优先调用 `valueOf` 方法）。
+
+这些方法必须返回一个原始值。如果 `toString` 或 `valueOf` 返回了一个对象，那么返回值会被忽略。
+
+默认情况下，普通对象具有 `toString` 和 `valueOf` 方法：
+
+- `toString` 方法返回一个字符串 `"[object Object]"`。
+- `valueOf` 方法返回对象自身。
+
+```javascript
+let user = {name: "John"};
+
+alert(user); // [object Object]
+alert(user.valueOf() === user); // true
+```
+
+默认的 `valueOf` 返回对象本身，会被忽略，所以相当于不存在。
+
+例如，这里的 `user` 执行和前面提到的那个 `user` 一样的操作，使用 `toString` 和 `valueOf` 的组合（而不是 `Symbol.toPrimitive`）：
+
+```javascript
+let user = {
+  name: "John",
+  money: 1000,
+
+  // 对于 hint="string"
+  toString() {
+    return `{name: "${this.name}"}`;
+  },
+
+  // 对于 hint="number" 或 "default"
+  valueOf() {
+    return this.money;
+  }
+};
+
+alert(user); // toString -> {name: "John"}
+alert(+user); // valueOf -> 1000
+alert(user + 500); // valueOf -> 1500
+```
+
+如果希望有一个地方处理所有原始转换，可以只实现 `toString`：
+
+```javascript
+let user = {
+  name: "John",
+
+  toString() {
+    return this.name;
+  }
+};
+
+alert(user); // toString -> John
+alert(user + 500); // toString -> John500
+```
+
+如果没有 `Symbol.toPrimitive` 和 `valueOf`，`toString` 将处理所有原始转换。
+
+#### 转换可以返回任何原始类型
+
+关于所有原始转换方法，有一个重要的点需要知道，就是它们不一定会返回 “hint” 的原始值。
+
+唯一强制性的事情是：这些方法必须返回原始值，而不是对象。
+
+由于历史原因， `toString` 或 `valueOf` 返回对象并不会出现 error，但是这种值会被忽略。这是因为在 JavaScript 语言发展初期，没有很好的 “error” 的概念。
+
+`Symbol.toPrimitive` 更严格，它必须返回一个原始值，否则就会出现 error。
+
+#### 多次转换
+
+我们已经知道，许多运算符和函数执行类型转换，例如乘法 `*` 将操作数转换为数字。
+
+如果我们将对象作为参数传递，则会出现两个运算阶段：
+
+1. 对象被转换为原始值（通过前面我们描述的规则）。
+2. 如果还需要进一步计算，则生成的原始值会被进一步转换。
+
+```javascript
+let obj = {
+  toString() {
+    return "2";
+  }
+};
+alert(obj * 2); // 4
+```
+
+二元加法在同样的情况下会将其连接成字符串，因为它更愿意接受字符串：
+
+```javascript
+let obj = {
+  toString() {
+    return "2";
+  }
+};
+alert(obj + 2); // 22（"2" + 2）被转换为原始值字符串 => 级联
+```
+
+
+
+## 数据类型
+
+### 原始类型的方法
+
+JavaScript 允许我们像使用对象一样使用原始类型（字符串，数字等）。
+
+原始类型和对象之间的关键区别
+
+原始值：是原始类型中的一种值。
+
+- 在 JavaScript 中有 7 种原始类型：`string`，`number`，`bigint`，`boolean`，`symbol`，`null` 和 `undefined`。
+
+对象：能够存储多个值作为属性。
+
+- 可以使用大括号 `{}` 创建对象，例如：`{name: "John", age: 30}`。JavaScript 中还有其他种类的对象，例如函数就是对象。
+
+对象的一个优势是可以把函数作为对象的属性存储到对象中。
+
+```javascript
+let john = {
+  name: "John",
+  sayHi: function() {
+    alert("Hi buddy!");
+  }
+};
+
+john.sayHi(); // Hi buddy!
+```
+
+许多内建对象已经存在，例如那些处理日期、错误、HTML 元素等的内建对象。它们具有不同的属性和方法。
+
+但是，这些特性（feature）都是有成本的！
+
+#### 当作对象的原始类型
+
+以下是 JavaScript 创建者面临的悖论：
+
+- 人们可能想对诸如字符串或数字之类的原始类型执行很多操作。最好使用方法来访问它们。
+- 原始类型必须尽可能的简单轻量。
+
+而解决方案看起来多少有点尴尬：
+
+1. 原始类型仍然是原始的。与预期相同，提供单个值
+2. JavaScript 允许访问字符串，数字，布尔值和 symbol 的方法和属性。
+3. 为了使它们起作用，创建了提供额外功能的特殊“对象包装器”，使用后即被销毁。
+
+“对象包装器”对于每种原始类型都是不同的，它们被称为 `String`、`Number`、`Boolean`、`Symbol` 和 `BigInt`。因此，它们提供了不同的方法。
+
+例如，字符串方法`str.toUpperCase()` 返回一个大写化处理的字符串。
+
+```javascript
+let str = "Hello";
+alert( str.toUpperCase() ); // HELLO
+```
+
+ `str.toUpperCase()` 中实际发生的情况：
+
+1. 字符串 `str` 是一个原始值。因此，在访问其属性时，会创建一个包含字符串字面值的特殊对象，并且具有可用的方法，例如 `toUpperCase()`。
+2. 该方法运行并返回一个新的字符串（由 `alert` 显示）。
+3. 特殊对象被销毁，只留下原始值 `str`。
+
+所以原始类型可以提供方法，但它们依然是轻量级的。
+
+JavaScript 引擎高度优化了这个过程。它甚至可能跳过创建额外的对象。但是它仍然必须遵守规范，并且表现得好像它创建了一样。
+
+**构造器 `String/Number/Boolean` 仅供内部使用**
+
+像 Java 这样的一些语言允许我们使用 `new Number(1)` 或 `new Boolean(false)` 等语法，明确地为原始类型创建“对象包装器”。
+
+在 JavaScript 中是可以的，但极其 **不推荐**。因为这样会出问题。
+
+```javascript
+alert( typeof 0 ); // "number"
+alert( typeof new Number(0) ); // "object"!
+```
+
+对象在 `if` 中始终为真，所以此处的 alert 将显示：
+
+```javascript
+let zero = new Number(0);
+if (zero) { // zero 为 true，因为它是一个对象
+  alert( "zero is truthy?!?" );
+}
+```
+
+另一方面，调用不带 `new`（关键字）的 `String/Number/Boolean` 函数是可以的且有效的。它们将一个值转换为相应的类型：转成字符串、数字或布尔值（原始类型）。
+
+```javascript
+let num = Number("123"); // 将字符串转成数字
+```
+
+**null/undefined 没有任何方法**
+
+特殊的原始类型 `null` 和 `undefined` 是例外。它们没有对应的“对象包装器”，也没有提供任何方法。从某种意义上说，它们是“最原始的”。
 
 
 
