@@ -846,8 +846,6 @@ let user = new Object(); // “构造函数” 的语法
 let user = {};  // “字面量” 的语法
 ```
 
-
-
 ### 属性
 
 可以在创建对象的时候，立即将一些属性以键值对的形式放到 `{...}` 中。
@@ -2330,15 +2328,10 @@ alert(obj + 2); // 22（"2" + 2）被转换为原始值字符串 => 级联
 
 JavaScript 允许我们像使用对象一样使用原始类型（字符串，数字等）。
 
-原始类型和对象之间的关键区别
+原始类型和对象之间的关键区别：
 
-原始值：是原始类型中的一种值。
-
-- 在 JavaScript 中有 7 种原始类型：`string`，`number`，`bigint`，`boolean`，`symbol`，`null` 和 `undefined`。
-
+原始值：是原始类型中的一种值（7 种）。
 对象：能够存储多个值作为属性。
-
-- 可以使用大括号 `{}` 创建对象，例如：`{name: "John", age: 30}`。JavaScript 中还有其他种类的对象，例如函数就是对象。
 
 对象的一个优势是可以把函数作为对象的属性存储到对象中。
 
@@ -2418,6 +2411,713 @@ let num = Number("123"); // 将字符串转成数字
 **null/undefined 没有任何方法**
 
 特殊的原始类型 `null` 和 `undefined` 是例外。它们没有对应的“对象包装器”，也没有提供任何方法。从某种意义上说，它们是“最原始的”。
+
+
+
+### 数字类型
+
+在现代 JavaScript 中，数字（number）有两种类型：
+
+1. JavaScript 中的常规数字以 64 位的格式 IEEE-754 存储，也被称为“双精度浮点数”。
+2. BigInt 用于表示任意长度的整数。
+
+#### 编写数字的更多方法
+
+假如我们需要表示 10 亿。显然，可以这样写：
+
+```javascript
+let billion = 1000000000;
+```
+
+我们也可以使用下划线 `_` 作为分隔符：
+
+```javascript
+let billion = 1_000_000_000;
+```
+
+这里的下划线 `_` 扮演了“语法糖”的角色，使得数字具有更强的可读性。引擎会直接忽略数字之间的 `_`
+
+在 JavaScript 中可以通过在数字后面附加字母 `"e"` 并指定零的个数来缩短数字：
+
+```javascript
+let billion = 1e9;  // 10 亿
+alert( 7.3e9 );  // 73 亿
+```
+
+也可以使用 `"e"` 来表示很小的数字：
+
+```javascript
+let mcs = 1e-6; // 0.000001;
+```
+
+#### 十六进制，二进制和八进制数字
+
+十六进制数字在 JavaScript 中被广泛用于表示颜色，编码字符等。
+
+```javascript
+alert( 0xff ); // 255
+alert( 0xFF ); // 255
+```
+
+二进制和八进制数字系统很少使用，但也支持使用 `0b` 和 `0o` 前缀：
+
+```javascript
+let a = 0b11111111; // 255
+let b = 0o377; // 255
+alert( a == b ); // true
+```
+
+只有这三种进制支持这种写法。对于其他进制，应使用函数 `parseInt`。
+
+#### toString(base)
+
+方法 `num.toString(base)` 返回在给定 `base` 进制数字系统中 `num` 的字符串表示形式。
+
+举个例子：
+
+```javascript
+let num = 255;
+
+alert( num.toString(16) );  // ff
+alert( num.toString(2) );   // 11111111
+```
+
+`base` 的范围可以从 `2` 到 `36`。默认情况下是 `10`。
+
+base=36 是最大进制，数字可以是 `0..9` 或 `a..z`。所有拉丁字母都被用于了表示数字。当我们需要将一个较长的数字标识符转换成较短的时候，例如做一个短的 URL。可以简单地使用基数为 `36` 的数字系统表示：
+
+```javascript
+alert( 123456..toString(36) ); // 2n9c
+```
+
+**使用两个点来调用一个方法**
+
+如果想直接在数字上调用方法，比如上面例子中的 `toString`，只需在后面放置两个点 `..`（一个点会被引擎错误地认为是小数部分）。
+
+也可以写成 `(123456).toString(36)`。
+
+#### 舍入
+
+舍入（rounding）是使用数字时最常用的操作之一。
+
+| 方法         | 核心逻辑                 | 3.1  | 3.6  | -1.1 | -1.9 |
+| ------------ | ------------------------ | ---- | ---- | ---- | ---- |
+| Math.floor() | 向下取整                 | 3    | 3    | -2   | -2   |
+| Math.ceil()  | 向上取整                 | 4    | 4    | -1   | -1   |
+| Math.round() | 四舍五入（取最近的整数） | 3    | 4    | -1   | -2   |
+| Math.trunc() | 截断（直接扔掉小数部分） | 3    | 3    | -1   | -1   |
+
+但是，如果我们想将数字舍入到小数点后 `n` 位，该怎么办？
+
+有两种方式可以实现这个需求：
+
+1. 乘除法
+
+   例如，要将数字舍入到小数点后两位，我们可以将数字乘以 `100`，调用舍入函数，然后再将其除回。
+
+   ```javascript
+   let num = 1.23456;
+   alert( Math.round(num * 100) / 100 ); // 1.23456 -> 123.456 -> 123 -> 1.23
+   ```
+
+2. 函数 toFixed(n) 将数字舍入到小数点后 `n` 位，并以字符串形式返回结果。如果小数部分比所需要的短，则在结尾添加零
+
+   ```javascript
+   let num = 12.34;
+   alert( num.toFixed(1) ); // "12.3"
+   alert( num.toFixed(5) ); // "12.34000"
+   ```
+
+   我们可以使用一元加号或 `Number()` 调用，将其转换为数字，例如 `+ num.toFixed(5)`。
+
+#### 不精确的计算
+
+在内部，数字是以 64 位格式 IEEE-754 表示的，所以正好有 64 位可以存储一个数字：其中 52 位被用于存储这些数字，其中 11 位用于存储小数点的位置，而 1 位用于符号。
+
+如果一个数字真的很大，则可能会溢出 64 位存储，变成一个特殊的数值 `Infinity`：
+
+```javascript
+alert( 1e500 ); // Infinity
+```
+
+这可能不那么明显，但经常会发生的是，精度的损失。
+
+没错，如果我们检查 `0.1` 和 `0.2` 的总和是否为 `0.3`，我们会得到 `false`。
+
+```javascript
+alert( 0.1 + 0.2 == 0.3 ); // false
+alert( 0.1 + 0.2 ); // 0.30000000000000004
+```
+
+在十进制数字系统中，可以保证以 `10` 的整数次幂作为除数能够正常工作，但是以 `3` 作为除数则不能。同样的，在二进制中，可以保证以 `2` 的整数次幂作为除数时能够正常工作，但 `1/10` 就变成了一个无限循环的二进制小数。
+
+使用二进制数字系统无法精确存储 0.1 或 0.2。IEEE-754 数字格式通过将数字舍入到最接近的可能数字来解决此问题。这些舍入规则通常不允许我们看到“极小的精度损失”，但是它确实存在。
+
+我们可以看到：
+
+```javascript
+alert( 0.1.toFixed(20) ); // 0.10000000000000000555
+```
+
+当我们对两个数字进行求和时，它们的“精度损失”会叠加起来。
+
+**不仅仅是 JavaScript**
+
+许多其他编程语言也存在同样的问题。PHP，Java，C，Perl，Ruby 给出的也是完全相同的结果，因为它们基于的是相同的数字格式。
+
+我们能解决这个问题吗？当然，最可靠的方法是借助方法 toFixed(n) 对结果进行舍入：
+
+```javascript
+let sum = 0.1 + 0.2;
+alert( sum.toFixed(2) ); // "0.30"
+alert( +sum.toFixed(2) ); // 0.3
+```
+
+我们可以将数字临时乘以 100（或更大的数字），将其转换为整数，进行数学运算，然后再除回。当我们使用整数进行数学运算时，误差会有所减少，但仍然可以在除法中得到：
+
+```javascript
+alert( (0.1 * 10 + 0.2 * 10) / 10 ); // 0.3
+alert( (0.28 * 100 + 0.14 * 100) / 100); // 0.4200000000000001
+```
+
+乘/除法可以减少误差，但不能完全消除误差。
+
+#### isFinite 和 isNaN
+
+还记得这两个特殊的数值吗？
+
+- `Infinity`（和 `-Infinity`）是一个特殊的数值，比任何数值都大（小）。
+- `NaN` 代表一个 error。
+
+它们属于 `number` 类型，但不是“普通”数字，因此，这里有用于检查它们的特殊函数：
+
+- `isNaN(value)` 将其参数转换为数字，然后测试它是否为 `NaN`：
+
+  ```javascript
+  alert( isNaN(NaN) ); // true
+  alert( isNaN("str") ); // true
+  ```
+
+  但是我们需要这个函数吗？我们不能只使用 `=== NaN` 比较吗？很不幸，这不行。值 “NaN” 是独一无二的，它不等于任何东西，包括它自身：
+
+  ```javascript
+  alert( NaN === NaN ); // false
+  ```
+
+- `isFinite(value)` 将其参数转换为数字，如果是常规数字而不是 `NaN/Infinity/-Infinity`，则返回 `true`：
+
+  ```javascript
+  alert( isFinite("15") ); // true
+  alert( isFinite("str") ); // false，NaN
+  alert( isFinite(Infinity) ); // false，Infinity
+  ```
+
+有时 `isFinite` 被用于验证字符串值是否为常规数字：
+
+```javascript
+let num = +prompt("Enter a number", '');
+alert( isFinite(num) );
+```
+
+请注意，在所有数字函数中，包括 `isFinite`，空字符串或仅有空格的字符串均被视为 `0`。
+
+**与 `Object.is` 进行比较**
+
+有一个特殊的内建方法 `Object.is`，它类似于 `===` 一样对值进行比较，但它对于两种边缘情况更可靠：
+
+1. 它适用于 `NaN`：`Object.is(NaN, NaN) === true`，这是件好事。
+2. 值 `0` 和 `-0` 是不同的：`Object.is(0, -0) === false`，从技术上讲这是对的，因为在内部，数字的符号位可能会不同，即使其他所有位均为零。
+
+在所有其他情况下，`Object.is(a, b)` 与 `a === b` 相同。
+
+#### parseInt 和 parseFloat
+
+使用加号 `+` 或 `Number()` 的数字转换是严格的。如果一个值不完全是一个数字，就会失败：
+
+```javascript
+alert( +"100px" ); // NaN
+```
+
+唯一的例外是字符串开头或结尾的空格，因为它们会被忽略。
+
+但在现实生活中，我们经常会有带有单位的值，例如 CSS 中的 `"100px"` 或 `"12pt"`。并且，在很多国家，货币符号是紧随金额之后的，所以我们有 `"19€"`，并希望从中提取出一个数值。
+
+这就是 `parseInt` 和 `parseFloat` 的作用。
+
+它们可以从字符串中“读取”数字，直到无法读取为止。如果发生 error，则返回收集到的数字。函数 `parseInt` 返回一个整数，而 `parseFloat` 返回一个浮点数：
+
+```javascript
+alert( parseInt('100px') ); // 100
+alert( parseFloat('12.5em') ); // 12.5
+
+alert( parseInt('12.3') ); // 12，只有整数部分被返回了
+alert( parseFloat('12.3.4') ); // 12.3，在第二个点出停止了读取
+```
+
+某些情况下，`parseInt/parseFloat` 会返回 `NaN`。当没有数字可读时会发生这种情况：
+
+```javascript
+alert( parseInt('a123') ); // NaN，第一个符号停止了读取
+```
+
+**parseInt(str, radix) 的第二个参数**
+
+`parseInt()` 函数具有可选的第二个参数。它指定了数字系统的基数，因此 `parseInt` 还可以解析十六进制数字、二进制数字等的字符串：
+
+```javascript
+alert( parseInt('0xff', 16) ); // 255
+alert( parseInt('ff', 16) ); // 255，没有 0x 仍然有效
+
+alert( parseInt('2n9c', 36) ); // 123456
+```
+
+#### 其他数学函数
+
+JavaScript 有一个内建的 Math 对象，它包含了一个小型的数学函数和常量库（和python中的用法基本一致）。
+
+
+
+### 字符串
+
+在 JavaScript 中，文本数据被以字符串形式存储，单个字符没有单独的类型。
+
+字符串的内部格式始终是 UTF-16，它不依赖于页面编码。
+
+#### 引号（Quotes）
+
+字符串可以包含在单引号、双引号或反引号中：
+
+```javascript
+let single = 'single-quoted';
+let double = "double-quoted";
+let backticks = `backticks`;
+```
+
+单引号和双引号基本相同。反引号允许我们通过 `${…}` 将表达式嵌入到字符串中：
+
+```javascript
+function sum(a, b) {
+  return a + b;
+}
+alert(`1 + 2 = ${sum(1, 2)}.`); // 1 + 2 = 3.
+```
+
+使用反引号的另一个优点是它们允许字符串跨行：
+
+```javascript
+let guestList = `Guests:
+ * John
+ * Pete
+ * Mary
+`;
+
+alert(guestList); // 客人清单，多行
+```
+
+如果我们使用单引号或双引号来实现字符串跨行的话，则会出现错误：
+
+```javascript
+let guestList = "Guests: // Error: Unexpected token ILLEGAL
+  * John";
+```
+
+单引号和双引号来自语言创建的古老时代，当时没有考虑到多行字符串的需要。反引号出现较晚，因此更通用。
+
+#### 特殊字符
+
+我们仍然可以通过使用“换行符（newline character）”，以支持使用单引号和双引号来创建跨行字符串。换行符写作 `\n`，用来表示换行：
+
+```javascript
+let guestList = "Guests:\n * John\n * Pete\n * Mary";
+alert(guestList); // 一个多行的客人列表
+```
+
+例如，这两行描述的是一样的，只是书写方式不同：
+
+```javascript
+let str1 = "Hello\nWorld";
+let str2 = `Hello
+World`;
+
+alert(str1 == str2); // true
+```
+
+转义字符：
+
+| 字符                                    | 描述                                                         |
+| :-------------------------------------- | :----------------------------------------------------------- |
+| `\n`                                    | 换行                                                         |
+| `\r`                                    | 在 Windows 文本文件中，两个字符 `\r\n` 的组合代表一个换行。而在非 Windows 操作系统上，它就是 `\n`。这是历史原因造成的，大多数的 Windows 软件也理解 `\n`。 |
+| `\'`, `\"`                              | 引号                                                         |
+| `\\`                                    | 反斜线                                                       |
+| `\t`                                    | 制表符                                                       |
+| `\b`, `\f`, `\v`                        | 退格，换页，垂直标签 —— 为了兼容性，现在已经不使用了。       |
+| `\xXX`                                  | 具有给定十六进制 Unicode `XX` 的 Unicode 字符，例如：`'\x7A'` 和 `'z'` 相同。 |
+| `\uXXXX`                                | 以 UTF-16 编码的十六进制代码 `XXXX` 的 Unicode 字符，例如 `\u00A9` —— 是版权符号 `©` 的 Unicode。它必须正好是 4 个十六进制数字。 |
+| `\u{X…XXXXXX}`（1 到 6 个十六进制字符） | 具有给定 UTF-32 编码的 Unicode 符号。一些罕见的字符用两个 Unicode 符号编码，占用 4 个字节。这样我们就可以插入长代码了。 |
+
+Unicode 示例：
+
+```javascript
+alert( "\u00A9" ); // ©
+alert( "\u{20331}" ); // 佫，罕见的中国象形文字（长 Unicode）
+alert( "\u{1F60D}" ); // 😍，笑脸符号（另一个长 Unicode）
+```
+
+如果我们想要在字符串中插入一个引号，我们也会使用它。
+
+```javascript
+alert( 'I\'m the Walrus!' ); // I'm the Walrus!
+```
+
+当然，只有与外部闭合引号相同的引号才需要转义。因此，作为一个更优雅的解决方案，我们可以改用双引号或者反引号：
+
+```javascript
+alert( `I'm the Walrus!` ); // I'm the Walrus!
+```
+
+#### 字符串长度
+
+`length` 属性表示字符串长度：
+
+```javascript
+alert( `My\n`.length ); // 3
+```
+
+掌握其他编程语言的人，有时会错误地调用 `str.length()` 而不是 `str.length`。这是行不通的。请注意 `str.length` 是一个数字属性，而不是函数。后面不需要添加括号。
+
+#### 访问字符
+
+要获取在 `pos` 位置的一个字符，可以使用方括号 `[pos]` 或者调用 str.charAt(pos) 方法。第一个字符从零位置开始：
+
+```javascript
+let str = `Hello`;
+
+alert( str[0] ); // H
+alert( str.charAt(0) ); // H
+alert( str[str.length - 1] ); // o
+```
+
+方括号是获取字符的一种现代化方法，而 `charAt` 是历史原因才存在的。
+
+它们之间的唯一区别是，如果没有找到字符，`[]` 返回 `undefined`，而 `charAt` 返回一个空字符串：
+
+```javascript
+let str = `Hello`;
+
+alert( str[1000] ); // undefined
+alert( str.charAt(1000) ); // ''（空字符串）
+```
+
+我们也可以使用 `for..of` 遍历字符：
+
+```javascript
+for (let char of "Hello") {
+  alert(char); // H,e,l,l,o（char 变为 "H"，然后是 "e"，然后是 "l" 等）
+}
+```
+
+#### 字符串是不可变的
+
+在 JavaScript 中，字符串不可更改。改变字符是不可能的。
+
+我们证明一下为什么不可能：
+
+```javascript
+let str = 'Hi';
+str[0] = 'h'; // error
+alert( str[0] ); // 无法运行
+```
+
+通常的解决方法是创建一个新的字符串，并将其分配给 `str` 而不是以前的字符串。
+
+```javascript
+let str = 'Hi';
+
+str = 'h' + str[1];  // 替换字符串
+alert( str ); // hi
+```
+
+#### 改变大小写
+
+`toLowerCase()` 和 `toUpperCase()` 方法可以改变大小写：
+
+```javascript
+alert( 'Interface'.toUpperCase() ); // INTERFACE
+alert( 'Interface'.toLowerCase() ); // interface
+```
+
+或者我们想要使一个字符变成小写：
+
+```javascript
+alert( 'Interface'[0].toLowerCase() ); // 'i'
+```
+
+#### 查找子字符串
+
+在字符串中查找子字符串有很多种方法。
+
+##### str.indexOf
+
+它从给定位置 `pos` 开始，在 `str` 中查找 `substr`，如果没有找到，则返回 `-1`，否则返回匹配成功的位置。
+
+```javascript
+let str = 'Widget with id';
+
+alert( str.indexOf('Widget') ); // 0
+alert( str.indexOf('widget') ); // -1，检索是大小写敏感的
+
+alert( str.indexOf("id") ); // 1，"id" 在位置 1 处
+```
+
+可选的第二个参数允许我们从一个给定的位置开始检索。
+
+例如，`"id"` 第一次出现的位置是 `1`。查询下一个存在位置时，我们从 `2` 开始检索：
+
+```javascript
+let str = 'Widget with id';
+
+alert( str.indexOf('id', 2) ) // 12
+```
+
+如果我们对所有存在位置都感兴趣，可以在一个循环中使用 `indexOf`。每一次新的调用都发生在上一匹配位置之后：
+
+```javascript
+let str = 'As sly as a fox, as strong as an ox';
+
+let target = 'as';
+
+let pos = 0;
+while (true) {
+  let foundPos = str.indexOf(target, pos);
+  if (foundPos == -1) break;
+  alert( `Found at ${foundPos}` );
+  pos = foundPos + 1; // 继续从下一个位置查找
+}
+```
+
+相同的算法可以简写：
+
+```javascript
+let str = "As sly as a fox, as strong as an ox";
+let target = "as";
+
+let pos = -1;
+while ((pos = str.indexOf(target, pos + 1)) != -1) {
+  alert( pos );
+}
+```
+
+##### str.lastIndexOf(substr, pos)
+
+它从字符串的末尾开始搜索到开头，会以相反的顺序列出这些事件。
+
+在 `if` 测试中 `indexOf` 有一点不方便。我们不能像这样把它放在 `if` 中：
+
+```javascript
+let str = "Widget with id";
+
+if (str.indexOf("Widget")) {
+    alert("We found it"); // 不工作！
+}
+```
+
+上述示例中的 `alert` 不会显示，因为 `str.indexOf("Widget")` 返回 0。但是 if 认为 0 表示 false。因此应该像这样：
+
+```javascript
+let str = "Widget with id";
+
+if (str.indexOf("Widget") != -1) {
+    alert("We found it");
+}
+```
+
+##### 按位（bitwise）NOT 技巧
+
+它将数字转换为 32-bit 整数（如果存在小数部分，则删除小数部分），然后对其二进制表示形式中的所有位均取反。
+
+实际上，这意味着一件很简单的事儿：对于 32-bit 整数，`~n` 等于 `-(n+1)`。
+
+```javascript
+alert( ~2 ); // -3，和 -(2+1) 相同
+alert( ~-1 ); // 0，和 -(-1+1) 相同
+```
+
+因此，仅当 `indexOf` 的结果不是 `-1` 时，检查 `if ( ~str.indexOf("...") )` 才为真。人们用它来简写 `indexOf` 检查：
+
+```javascript
+let str = "Widget";
+
+if (~str.indexOf("Widget")) {
+  alert( 'Found it!' ); // 正常运行
+}
+```
+
+通常不建议以非显而易见的方式使用语言特性，但这种特殊技巧在旧代码中仍被广泛使用，所以我们应该理解它。
+
+> if (~str.indexOf(...)) 读作 “if found”。
+
+确切地说，由于 `~` 运算符将大数字截断为 32 位，因此存在给出 `0` 的其他数字，最小的数字是 `~4294967295=0`。这使得这种检查只有在字符串没有那么长的情况下才是正确的。
+
+##### includes，startsWith，endsWith
+
+更现代的方法 str.includes(substr, pos) 根据 `str` 中是否包含 `substr` 来返回 `true/false`。
+
+如果我们需要检测匹配，但不需要它的位置，那么这是正确的选择：
+
+```javascript
+alert( "Widget with id".includes("Widget") ); // true
+alert( "Hello".includes("Bye") ); // false
+```
+
+`str.includes` 的第二个可选参数是开始搜索的起始位置：
+
+```javascript
+alert( "Widget".includes("id") ); // true
+alert( "Widget".includes("id", 3) ); // false, 从位置 3 开始没有 "id"
+```
+
+方法 str.startsWith 和 str.endsWith 的功能与其名称所表示的意思相同：
+
+```javascript
+alert( "Widget".startsWith("Wid") ); // true，"Widget" 以 "Wid" 开始
+alert( "Widget".endsWith("get") ); // true，"Widget" 以 "get" 结束
+```
+
+#### 获取子字符串
+
+JavaScript 中有三种获取字符串的方法：`substring`、`substr` 和 `slice`。
+
+| 方法                  | 选择方式……                            | 负值参数          |
+| :-------------------- | :------------------------------------ | :---------------- |
+| slice(start, end)     | 从 start 到 end（不含 end）           | 允许              |
+| substring(start, end) | 从 start 到 end（不含 end）           | 负值被视为 0      |
+| substr(start, length) | 从 start 开始获取长为 length 的字符串 | 允许 start 为负数 |
+
+#### 比较字符串
+
+所有的字符串都使用 UTF-16 编码。即：每个字符都有对应的数字代码。有特殊的方法可以获取代码表示的字符，以及字符对应的代码。
+
+- `str.codePointAt(pos)`：返回在 `pos` 位置的字符代码
+
+- `String.fromCodePoint(code)`：通过数字 `code` 创建字符，还可以用 `\u` 后跟十六进制代码，通过这些代码添加 Unicode 字符
+
+现在我们看一下代码为 `65..220` 的字符（拉丁字母和一些额外的字符），方法是创建一个字符串：
+
+```javascript
+let str = '';
+
+for (let i = 65; i <= 220; i++) {
+  str += String.fromCodePoint(i);
+}
+alert( str );
+// ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~......
+// ¡¢£¤¥¦§¨©ª«¬·®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜ
+```
+
+##### 正确的比较
+
+执行字符串比较的“正确”算法比看起来更复杂，因为不同语言的字母都不相同。所有现代浏览器（IE10- 需要额外的库 [Intl.JS](https://github.com/andyearnshaw/Intl.js/)) 都支持国际化标准 [ECMA-402](http://www.ecma-international.org/ecma-402/1.0/ECMA-402.pdf)。
+
+调用 `str.localeCompare(str2)` 会根据语言规则返回一个整数，这个整数能指示字符串 `str` 在排序顺序中排在字符串 `str2` 前面、后面、还是相同：
+
+- 如果 `str` 排在 `str2` 前面，则返回负数。
+- 如果 `str` 排在 `str2` 后面，则返回正数。
+- 如果它们在相同位置，则返回 `0`。
+
+```javascript
+alert( 'Österreich'.localeCompare('Zealand') ); // -1
+```
+
+#### 内部，Unicode
+
+##### 代理对
+
+所有常用的字符都是一个 2 字节的代码。大多数欧洲语言，数字甚至大多数象形文字中的字母都有 2 字节的表示形式。
+
+但 2 字节只允许 65536 个组合，这对于表示每个可能的符号是不够的。所以稀有的符号被称为“代理对”的一对 2 字节的符号编码。
+
+这些符号的长度是 `2`：
+
+```javascript
+alert( '𝒳'.length ); // 2，大写数学符号 X
+alert( '😂'.length ); // 2，笑哭表情
+alert( '𩷶'.length ); // 2，罕见的中国象形文字
+```
+
+注意，代理对在 JavaScript 被创建时并不存在，因此无法被编程语言正确处理！
+
+我们实际上在上面的每个字符串中都有一个符号，但 `length` 显示长度为 `2`。
+
+`String.fromCodePoint` 和 `str.codePointAt` 是几种处理代理对的少数方法。它们最近才出现在编程语言中。在它们之前，只有 String.fromCharCode 和 str.charCodeAt。这些方法实际上与 `fromCodePoint/codePointAt` 相同，但是不适用于代理对。
+
+获取符号可能会非常麻烦，因为代理对被认为是两个字符：
+
+```javascript
+alert( '𝒳'[0] ); // 奇怪的符号……
+alert( '𝒳'[1] ); // ……代理对的一块
+```
+
+请注意，代理对的各部分没有任何意义。因此，上述示例中的 alert 显示的实际上是垃圾信息。
+
+技术角度来说，代理对也是可以通过它们的代码检测到的：如果一个字符的代码在 `0xd800..0xdbff` 范围内，那么它是代理对的第一部分。下一个字符（第二部分）必须在 `0xdc00..0xdfff` 范围中。这些范围是按照标准专门为代理对保留的。
+
+```javascript
+// charCodeAt 不理解代理对，所以它给出了代理对的代码
+
+alert( '𝒳'.charCodeAt(0).toString(16) ); // d835，在0xd800和0xdbff之间
+alert( '𝒳'.charCodeAt(1).toString(16) ); // dcb3, 在0xdc00和0xdfff之间
+```
+
+#### 变音符号与规范化
+
+在许多语言中，都有一些由基本字符组成的符号，在其上方/下方有一个标记。
+
+例如，字母 `a` 可以是 `àáâäãåā` 的基本字符。最常见的“复合”字符在 UTF-16 表中都有自己的代码。但不是全部，因为可能的组合太多。
+
+为了支持任意组合，UTF-16 允许我们使用多个 Unicode 字符：基本字符紧跟“装饰”它的一个或多个“标记”字符。
+
+例如，如果我们 `S` 后跟有特殊的 “dot above” 字符（代码 `\u0307`），则显示 Ṡ。
+
+```javascript
+alert( 'S\u0307' ); // Ṡ
+```
+
+如果我们需要在字母上方（或下方）添加额外的标记 —— 没问题，只需要添加必要的标记字符即可。
+
+例如，如果我们追加一个字符 “dot below”（代码 `\u0323`），那么我们将得到“S 上面和下面都有点”的字符：`Ṩ`。
+
+```javascript
+alert( 'S\u0307\u0323' ); // Ṩ
+```
+
+这在提供良好灵活性的同时，也存在一个有趣的问题：两个视觉上看起来相同的字符，可以用不同的 Unicode 组合表示。
+
+```javascript
+let s1 = 'S\u0307\u0323'; // Ṩ，S + 上点 + 下点
+let s2 = 'S\u0323\u0307'; // Ṩ，S + 下点 + 上点
+
+alert( `s1: ${s1}, s2: ${s2}` );
+
+alert( s1 == s2 ); // false，尽管字符看起来相同（?!）
+```
+
+为了解决这个问题，有一个 “Unicode 规范化”算法，它将每个字符串都转化成单个“通用”格式。
+
+它由 str.normalize() 实现。
+
+```javascript
+alert( "S\u0307\u0323".normalize() == "S\u0323\u0307".normalize() ); // true
+```
+
+实际情况下，`normalize()` 实际上将一个由 3 个字符组成的序列合并为一个：`\u1e68`（S 有两个点）。
+
+```javascript
+alert( "S\u0307\u0323".normalize().length ); // 1
+alert( "S\u0307\u0323".normalize() == "\u1e68" ); // true
+```
+
+事实上，情况并非总是如此，因为符号 `Ṩ` 是“常用”的，所以 UTF-16 创建者把它包含在主表中并给它了对应的代码。
 
 
 
