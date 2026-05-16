@@ -90,6 +90,7 @@ nav:
   - CS:
       - Frontend:
           - JavaScript: cs/frontend/JS.md
+          - CSS: cs/frontend/CSS.md
       - Rev:
           - Android: cs/rev/Android.md
           - Web-JS: cs/rev/Web-JS.md
