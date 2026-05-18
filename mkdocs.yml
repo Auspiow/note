@@ -84,6 +84,8 @@ nav:
           - WiFi与以太网: ZJU-Design/感知、通信与控制/WiFi与以太网.md
           - I2C-SPI-USB通信: ZJU-Design/感知、通信与控制/I2C-SPI-USB通信.md
   - CTF:
+      - Web:
+          - Java安全: ctf/web/Java安全.md
       - Writeups:
           - AliyunCTF 2026: ctf/writeups/Aliyun2026.md
           - ZJUBus-Web: ctf/writeups/zjubus-web.md
