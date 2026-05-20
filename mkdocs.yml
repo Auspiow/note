@@ -91,7 +91,7 @@ nav:
           - ZJUBus-Web: ctf/writeups/zjubus-web.md
   - CS:
       - Frontend:
-          - JavaScript: cs/frontend/JS.md
+          - JavaScript1: cs/frontend/JS1.md
           - CSS: cs/frontend/CSS.md
       - Rev:
           - Android: cs/rev/Android.md
