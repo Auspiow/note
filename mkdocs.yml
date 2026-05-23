@@ -96,9 +96,8 @@ nav:
           - CSS: cs/frontend/CSS.md
       - Rev:
           - Android: cs/rev/Android.md
-          - Web-JS: cs/rev/Web-JS.md
       - Assembly:
           - x86: cs/assembly/x86.md
           - wasm: cs/assembly/Wasm.md
       - Crawler:
-            - JS逆向: cs/crawler/JS逆向.md
+          - JS逆向: cs/crawler/JS逆向.md
