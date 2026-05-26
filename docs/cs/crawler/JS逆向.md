@@ -306,8 +306,93 @@ decrypt: function(e, n) {
 })()
 ```
 
-### HOOK Cookie 操作
+### HOOK Cookie
 
 > http://q.10jqka.com.cn/
 
 定位`cookie`中`v`值的加密位置
+
+```txt
+v=A-ZTaUtcsGSsK2TAhPnGqD1JN1dtxykk_Ape49CP01HmSIjJOFd6kcybrvij
+```
+
+使用Object.defineProperty()检测cookie
+
+> https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
+
+```js
+(()=>{
+    _cookie = document.cookie;
+    Object.defineProperty(document, 'cookie', {
+        set: function (val) {
+            if (val.indexOf('v') != -1) {
+                debugger;
+            }
+            _cookie = val;
+        },
+        get: function () {
+            return _cookie;
+        },
+    });
+})()
+```
+
+定位到setCookie的代码
+
+```js
+function W() {
+    var t = n[161]
+      , r = qn.update(); 
+    // r=A-ZTaUtcsGSsK2TAhPnGqD1JN1dtxykk_Ape49CP01HmSIjJOFd6kcybrvij
+    return Wn.setCookie(On, r, m + Rn + w + t, E, n[162]),
+    $n.set(Pn, r),
+    r
+}
+```
+
+```js
+qn.update()
+'A2zZn51-KipC6T4W8lbs1kNLPUGbJRQiEssklcatete4zgJ_7jXgX2LZ9CwV'
+```
+
+### HOOK XHR
+
+| 调用方式        | 核心特点     | 传参方式  | 主要目的                            |
+| --------------- | ------------ | --------- | ----------------------------------- |
+| my_func()       | 最基础的调用 | (a, b)    | 正常执行函数                        |
+| (0, my_func)()  | 间接调用     | (a, b)    | 重置 this 指向，使其指向全局        |
+| my_func.call()  | 改变 this    | 1, 2, 3   | 手动指定 this，参数明确时使用       |
+| my_func.apply() | 改变 this    | [1, 2, 3] | 手动指定 this，参数是动态数组时使用 |
+
+> https://www.qimai.cn/
+
+```js
+(()=>{
+    let open = window.XMLHttpRequest.prototype.open;
+    window.XMLHttpRequest.prototype.open = function (method, url, async) {
+        if (url.indexOf("analysis") != -1) {
+            debugger;
+        }
+        return open.apply(this, arguments);
+    };
+})()
+```
+
+### XMLHttpRequest 与拦截器
+
+发送请求一般都会借助 jquery 完成，框架中内置了ajax方法完成网络请求，底层代码是 XMLHttpRequest
+
+用 python 作为类比，发送网络请求一般会使用 requests 第三方库，其底层代码是 urllib3
+
+> http://www.cninfo.com.cn/new/commonUrl?url=disclosure/list/notice#szseGem
+
+```js
+var xhr = new XMLHttpRequest();
+xhr.open('post', 'http://www.cninfo.com.cn/new/disclosure', true)
+xhr.setRequestHeader('accept', 'application/json;charset=UTF-8')
+xhr.send('column=szse_latest&pageNum=2&pageSize=30&sortName=&sortType=&clusterFlag=true')
+xhr.onreadystatechange = ()=>{
+    console.log(xhr.response)
+}
+```
+
