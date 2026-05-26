@@ -99,6 +99,5 @@ nav:
           - Android: cs/rev/Android.md
       - Assembly:
           - x86: cs/assembly/x86.md
-          - wasm: cs/assembly/Wasm.md
       - Crawler:
           - JS逆向: cs/crawler/JS逆向.md
