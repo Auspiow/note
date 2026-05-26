@@ -805,6 +805,604 @@ setTimeout(function run() {
 
 对于服务端的 JavaScript，就没有这个限制，并且还有其他调度即时异步任务的方式。
 
+
+
+### 装饰器模式和转发，call/apply
+
+JavaScript 在处理函数时提供了非凡的灵活性。它们可以被传递，用作对象，现在我们将看到如何在它们之间 **转发（forward）** 调用并 **装饰（decorate）** 它们。
+
+#### 透明缓存
+
+假设我们有一个 CPU 重负载的函数 `slow(x)`，它的结果是稳定的。如果经常调用该函数，我们希望将结果缓存下来，以避免在重新计算上花费额外的时间。
+
+但是我们不是将这个功能添加到 `slow()` 中，而是创建一个包装器（wrapper）函数，该函数增加了缓存功能。
+
+```javascript
+function slow(x) {
+  // 这里可能会有重负载的 CPU 密集型工作
+  alert(`Called with ${x}`);
+  return x;
+}
+
+function cachingDecorator(func) {
+  let cache = new Map();
+
+  return function(x) {
+    if (cache.has(x)) {    // 如果缓存中有对应的结果
+      return cache.get(x); // 从缓存中读取结果
+    }
+
+    let result = func(x);  // 否则就调用 func
+
+    cache.set(x, result);  // 然后将结果缓存（记住）下来
+    return result;
+  };
+}
+
+slow = cachingDecorator(slow);
+```
+
+在上面的代码中，`cachingDecorator` 是装饰器（decorator）：特殊的函数用来接受函数并改变它的行为。
+
+`cachingDecorator(func)` 的结果是一个“包装器”：`function(x)` 将 `func(x)` 的调用“包装”到缓存逻辑中：从外部代码来看，包装的函数执行的仍然是与之前相同的操作，只是在行为上添加了缓存功能。
+
+#### func.call 设定上下文
+
+上面提到的缓存装饰器不适用于对象方法。
+
+例如，在下面的代码中，`worker.slow()` 在装饰后停止工作：
+
+```javascript
+let worker = {
+  someMethod() {
+    return 1;
+  },
+
+  slow(x) {
+    alert("Called with " + x);
+    return x * this.someMethod();
+  }
+};
+
+function cachingDecorator(func) {
+  let cache = new Map();
+  return function(x) {
+    if (cache.has(x)) {
+      return cache.get(x);
+    }
+    let result = func(x); // (*)
+    cache.set(x, result);
+    return result;
+  };
+}
+
+alert( worker.slow(1) ); // 原始方法有效
+worker.slow = cachingDecorator(worker.slow); // 现在对其进行缓存
+alert( worker.slow(2) ); // Error: Cannot read property 'someMethod' of undefined
+```
+
+错误发生在试图访问 `this.someMethod` 并失败。原因是包装器将原始函数调用为 `(*)` 行中的 `func(x)`。并且，当这样调用时，函数将得到 `this = undefined`。
+
+如果尝试运行下面这段代码，我们会观察到类似的问题：
+
+```javascript
+let func = worker.slow;
+func(2);
+```
+
+有一个特殊的内建函数方法 `func.call(context, …args)`，允许设置 `this` 。
+
+```javascript
+func.call(context, arg1, arg2, ...)
+```
+
+它运行 `func`，提供的第一个参数作为 `this`，后面的作为参数（arguments）。
+
+简单地说，这两个调用几乎相同：
+
+```javascript
+func(1, 2, 3);
+func.call(obj, 1, 2, 3)
+```
+
+在下面的代码中，我们在不同对象的上下文中调用 `sayHi`：
+
+```javascript
+function sayHi() {
+  alert(this.name);
+}
+
+let user = { name: "John" };
+let admin = { name: "Admin" };
+
+sayHi.call( user ); // John
+sayHi.call( admin ); // Admin
+```
+
+在我们可以在包装器中使用 `call` 将上下文传递给原始函数：
+
+```javascript
+let worker = {
+  someMethod() {
+    return 1;
+  },
+
+  slow(x) {
+    alert("Called with " + x);
+    return x * this.someMethod(); // (*)
+  }
+};
+
+function cachingDecorator(func) {
+  let cache = new Map();
+  return function(x) {
+    if (cache.has(x)) {
+      return cache.get(x);
+    }
+    let result = func.call(this, x); // 现在 "this" 被正确地传递了
+    cache.set(x, result);
+    return result;
+  };
+}
+
+worker.slow = cachingDecorator(worker.slow);
+alert( worker.slow(2) ); // 正常
+```
+
+#### 传递多个参数
+
+之前，对于单个参数 `x`，我们可以只使用 `cache.set(x, result)` 来保存结果，并使用 `cache.get(x)` 来检索并获取结果。但是现在，我们需要记住 参数组合 `(min,max)` 的结果。原生的 `Map` 仅将单个值作为键（key）。
+
+这儿有许多解决方案可以实现：
+
+1. 实现一个新的类似 map 的更通用并且允许多个键的数据结构。
+2. 使用嵌套 map：使用 `cache.get(min).get(max)` 来获取 `result`。
+3. 将两个值合并为一个。我们可以为装饰器提供一个“哈希函数”，该函数将多个值合并为一个值。
+
+对于许多实际应用，第三种方式就足够了。
+
+在 `function()` 中我们可以得到一个包含所有参数的伪数组（pseudo-array）`arguments`，那么 `func.call(this, x)` 应该被替换为 `func.call(this, ...arguments)`。
+
+```javascript
+let worker = {
+  slow(min, max) {
+    alert(`Called with ${min},${max}`);
+    return min + max;
+  }
+};
+
+function cachingDecorator(func, hash) {
+  let cache = new Map();
+  return function() {
+    let key = hash(arguments); // (*)
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+
+    let result = func.call(this, ...arguments); // (**)
+
+    cache.set(key, result);
+    return result;
+  };
+}
+
+function hash(args) {
+  return args[0] + ',' + args[1];
+}
+
+worker.slow = cachingDecorator(worker.slow, hash);
+
+alert( worker.slow(3, 5) ); // works
+alert( "Again " + worker.slow(3, 5) ); // same (cached)
+```
+
+#### func.apply
+
+我们可以使用 `func.apply(this, arguments)` 代替 `func.call(this, ...arguments)`。
+
+```javascript
+func.apply(context, args)
+```
+
+它运行 `func` 设置 `this=context`，并使用类数组对象 `args` 作为参数列表（arguments）。
+
+因此，这两个调用几乎是等效的：
+
+```javascript
+func.call(context, ...args);
+func.apply(context, args);
+```
+
+只有一个关于 `args` 的细微的差别：
+
+- Spread 语法 `...` 允许将 可迭代对象 args 作为列表传递给 call。
+- `apply` 只接受 类数组 args。
+
+对于即可迭代又是类数组的对象，例如真正的数组，使用 `call` 或 `apply` 均可，但是 `apply` 可能会更快，因为大多数 JavaScript 引擎在内部对其进行了优化。
+
+将所有参数连同上下文一起传递给另一个函数被称为“呼叫转移（call forwarding）”。
+
+```javascript
+let wrapper = function() {
+  return func.apply(this, arguments);
+};
+```
+
+当外部代码调用这种包装器 `wrapper` 时，它与原始函数 `func` 的调用是无法区分的。
+
+#### 方法借用
+
+哈希函数目前仅适用于两个参数。试图使用 ` args.join` 方法让它适用于任何数量的 args ：
+
+```javascript
+function hash(args) {
+  return args.join(); // Error: arguments.join is not a function
+}
+```
+
+很可惜，这不行。`arguments` 对象既是可迭代对象又是类数组对象，但它并不是真正的数组。
+
+不过，有一种简单的方法可以使用数组的 join 方法：
+
+```javascript
+function hash() {
+  alert( [].join.call(arguments) ); // 1,2
+}
+
+hash(1, 2);
+```
+
+这个技巧被称为 **方法借用（method borrowing）**。
+
+我们从常规数组中获取（借用）join 方法，并使用 `[].join.call` 在 arguments 的上下文中运行它。
+
+#### 装饰器和函数属性
+
+通常，用装饰的函数替换函数或方法是安全的。但是如果原始函数有属性，则装饰后的函数将不再提供这些属性。
+
+一些包装器可能会提供自己的属性。例如，装饰器会计算一个函数被调用了多少次以及花费了多少时间，并通过包装器属性公开（expose）这些信息。
+
+存在一种创建装饰器的方法，该装饰器可保留对函数属性的访问权限，但这需要使用特殊的 `Proxy` 对象来包装函数。
+
+
+
+### 函数绑定
+
+当将对象方法作为回调进行传递，例如传递给 `setTimeout`，这儿会存在一个常见的问题：“丢失 `this`”。
+
+#### 丢失 “this”
+
+下面是使用 `setTimeout` 时 `this` 是如何丢失的：
+
+```javascript
+let user = {
+  firstName: "John",
+  sayHi() {
+    alert(`Hello, ${this.firstName}!`);
+  }
+};
+
+setTimeout(user.sayHi, 1000); // undefined!
+```
+
+这是因为 `setTimeout` 获取到了函数 `user.sayHi`，但它和对象分离开了。最后一行可以被重写为：
+
+```javascript
+let f = user.sayHi;
+setTimeout(f, 1000); // 丢失了 user 上下文
+```
+
+浏览器中会设定为 `this=window`，Node.js 中则会变为计时器（timer）对象，在其他类似的情况下，this 会变为 undefined。
+
+#### 解决方案 1：包装器
+
+最简单的解决方案是使用一个包装函数：
+
+```javascript
+let user = {
+  firstName: "John",
+  sayHi() {
+    alert(`Hello, ${this.firstName}!`);
+  }
+};
+
+setTimeout(() => user.sayHi(), 1000); // Hello, John!
+```
+
+现在它可以正常工作了，因为它从外部词法环境中获取到了 `user`，就可以正常地调用方法了。
+
+看起来不错，但是代码结构中出现了一个小漏洞。
+
+如果在 `setTimeout` 触发之前（有一秒的延迟！）`user` 的值改变，它将调用错误的对象！
+
+```javascript
+let user = {
+  firstName: "John",
+  sayHi() {
+    alert(`Hello, ${this.firstName}!`);
+  }
+};
+
+setTimeout(() => user.sayHi(), 1000);
+
+// user 的值在不到 1 秒的时间内发生了改变
+user = {
+  sayHi() { alert("Another user in setTimeout!"); }
+};
+
+// Another user in setTimeout!
+```
+
+#### 解决方案 2：bind
+
+函数提供了一个内建方法 bind，它可以绑定 `this`。
+
+```javascript
+let boundFunc = func.bind(context);
+```
+
+`func.bind(context)` 的结果是一个特殊的类似于函数的“外来对象（exotic object）”，它可以像函数一样被调用，并且透明地（transparently）将调用传递给 `func` 并设定 `this=context`。
+
+换句话说，`boundFunc` 调用就像绑定了 `this` 的 `func`。
+
+举个例子，这里的 `funcUser` 将调用传递给了 `func` 同时 `this=user`：
+
+```javascript
+let user = {
+  firstName: "John"
+};
+
+function func() {
+  alert(this.firstName);
+}
+
+let funcUser = func.bind(user);
+funcUser(); // John
+```
+
+这里的 `func.bind(user)` 作为 `func` 的“绑定的（bound）变体”，绑定了 `this=user`。
+
+所有的参数（arguments）都被“原样”传递给了初始的 `func`，例如：
+
+```javascript
+let user = {
+  firstName: "John"
+};
+
+function func(phrase) {
+  alert(phrase + ', ' + this.firstName);
+}
+
+// 将 this 绑定到 user
+let funcUser = func.bind(user);
+
+funcUser("Hello"); // Hello, John（参数 "Hello" 被传递，并且 this=user）
+```
+
+现在我们来尝试一个对象方法：
+
+```javascript
+let user = {
+  firstName: "John",
+  sayHi() {
+    alert(`Hello, ${this.firstName}!`);
+  }
+};
+
+let sayHi = user.sayHi.bind(user); // (*)
+
+// 可以在没有对象（译注：与对象分离）的情况下运行它
+sayHi(); // Hello, John!
+
+setTimeout(sayHi, 1000); // Hello, John!
+
+// 即使 user 的值在不到 1 秒内发生了改变
+// sayHi 还是会使用预先绑定（pre-bound）的值，该值是对旧的 user 对象的引用
+user = {
+  sayHi() { alert("Another user in setTimeout!"); }
+};
+```
+
+在 `(*)` 行，我们取了方法 `user.sayHi` 并将其绑定到 `user`。`sayHi` 是一个“绑定后（bound）”的方法，它可以被单独调用，也可以被传递给 `setTimeout` —— 都没关系，函数上下文都会是正确的。
+
+这里我们能够看到参数（arguments）都被“原样”传递了，只是 `this` 被 `bind` 绑定了：
+
+```javascript
+let user = {
+  firstName: "John",
+  say(phrase) {
+    alert(`${phrase}, ${this.firstName}!`);
+  }
+};
+
+let say = user.say.bind(user);
+
+say("Hello"); // Hello, John!（参数 "Hello" 被传递给了 say）
+say("Bye"); // Bye, John!（参数 "Bye" 被传递给了 say）
+```
+
+**便捷方法：`bindAll`**
+
+如果一个对象有很多方法，并且我们都打算将它们都传递出去，那么我们可以在一个循环中完成所有方法的绑定：
+
+```javascript
+for (let key in user) {
+  if (typeof user[key] == 'function') {
+    user[key] = user[key].bind(user);
+  }
+}
+```
+
+JavaScript 库还提供了方便批量绑定的函数，例如 lodash 中的 [_.bindAll(object, methodNames)](http://lodash.com/docs#bindAll)。
+
+#### Partial functions
+
+我们不仅可以绑定 `this`，还可以绑定参数（arguments）。虽然很少这么做，但有时它可以派上用场。
+
+```javascript
+let bound = func.bind(context, [arg1], [arg2], ...);
+```
+
+它允许将上下文绑定为 `this`，以及绑定函数的部分参数。
+
+例如，我们有一个乘法函数 `mul(a, b)`：
+
+```javascript
+function mul(a, b) {
+  return a * b;
+}
+```
+
+让我们使用 `bind` 在该函数基础上创建一个 `double` 函数：
+
+```javascript
+function mul(a, b) {
+  return a * b;
+}
+
+let double = mul.bind(null, 2);
+
+alert( double(3) ); // = mul(2, 3) = 6
+alert( double(4) ); // = mul(2, 4) = 8
+alert( double(5) ); // = mul(2, 5) = 10
+```
+
+对 `mul.bind(null, 2)` 的调用创建了一个新函数 `double`，它将调用传递到 `mul`，将 `null` 绑定为上下文，并将 `2` 绑定为第一个参数。并且，参数（arguments）均被“原样”传递。
+
+它被称为 [函数的部分应用（partial function application）](https://en.wikipedia.org/wiki/Partial_application) —— 我们通过绑定先有函数的一些参数来创建一个新函数。
+
+请注意，这里我们实际上没有用到 `this`。但是 `bind` 需要它，所以我们必须传入 `null` 之类的东西。
+
+下面这段代码中的 `triple` 函数将值乘了三倍：
+
+```javascript
+function mul(a, b) {
+  return a * b;
+}
+
+let triple = mul.bind(null, 3);
+
+alert( triple(3) ); // = mul(3, 3) = 9
+alert( triple(4) ); // = mul(3, 4) = 12
+alert( triple(5) ); // = mul(3, 5) = 15
+```
+
+为什么我们通常会创建一个部分应用函数？
+
+好处是我们可以创建一个具有可读性高的名字（`double`，`triple`）的独立函数。我们可以使用它，并且不必每次都提供一个参数，因为参数是被绑定了的。
+
+另一方面，当我们有一个非常灵活的函数，并希望有一个不那么灵活的变型时，部分应用函数会非常有用。
+
+例如，我们有一个函数 `send(from, to, text)`。然后，在一个 `user` 对象的内部，我们可能希望对它使用 `send` 的部分应用函数变型：从当前 user 发送 `sendTo(to, text)`。
+
+#### 没有上下文的 partial
+
+原生的 `bind` 不允许只绑定参数（arguments）但不绑定上下文 `this`。
+
+好在仅绑定参数（arguments）的函数 `partial` 比较容易实现。
+
+```javascript
+function partial(func, ...argsBound) {
+  return function(...args) { // (*)
+    return func.call(this, ...argsBound, ...args);
+  }
+}
+
+// 用法：
+let user = {
+  firstName: "John",
+  say(time, phrase) {
+    alert(`[${time}] ${this.firstName}: ${phrase}!`);
+  }
+};
+
+// 添加一个带有绑定时间的 partial 方法
+user.sayNow = partial(user.say, new Date().getHours() + ':' + new Date().getMinutes());
+
+user.sayNow("Hello");
+// 类似于这样的一些内容：
+// [10:00] John: Hello!
+```
+
+`partial(func[, arg1, arg2...])` 调用的结果是一个包装器 `(*)`，它调用 `func` 并具有以下内容：
+
+- 与它获得的函数具有相同的 `this`（对于 `user.sayNow` 调用来说，它是 `user`）
+- 然后给它 `...argsBound` —— 来自于 `partial` 调用的参数（`"10:00"`）
+- 然后给它 `...args` —— 给包装器的参数（`"Hello"`）
+
+使用 spread 可以很容易实现这些操作，对吧？
+
+此外，还有来自 lodash 库的现成的 [_.partial](https://lodash.com/docs#partial) 实现。
+
+
+
+### 深入理解箭头函数
+
+#### 箭头函数没有 “this”
+
+箭头函数没有 `this`。如果访问 `this`，则会从外部获取。
+
+例如，我们可以使用它在对象方法内部进行迭代：
+
+```javascript
+let group = {
+  title: "Our Group",
+  students: ["John", "Pete", "Alice"],
+
+  showList() {
+    this.students.forEach(
+      student => alert(this.title + ': ' + student)
+    );
+  }
+};
+
+group.showList();
+```
+
+这里 `forEach` 中使用了箭头函数，其中的 `this.title` 就是 `group.title`。
+
+**不能对箭头函数进行 new 操作**
+
+箭头函数不能用作构造器（constructor），不能用 new 调用它们。
+
+#### 箭头函数没有 “arguments”
+
+当我们需要使用当前的 `this` 和 `arguments` 转发一个调用时，这对装饰器（decorators）来说非常有用。
+
+例如，`defer(f, ms)` 获得了一个函数，并返回一个包装器，该包装器将调用延迟 `ms` 毫秒：
+
+```javascript
+function defer(f, ms) {
+  return function() {
+    setTimeout(() => f.apply(this, arguments), ms);
+  };
+}
+
+function sayHi(who) {
+  alert('Hello, ' + who);
+}
+
+let sayHiDeferred = defer(sayHi, 2000);
+sayHiDeferred("John"); // 2 秒后显示：Hello, John
+```
+
+不用箭头函数的话：
+
+```javascript
+function defer(f, ms) {
+  return function(...args) {
+    let ctx = this;
+    setTimeout(function() {
+      return f.apply(ctx, args);
+    }, ms);
+  };
+}
+```
+
+在这里，我们必须创建额外的变量 `args` 和 `ctx`，以便 `setTimeout` 内部的函数可以获取它们。
+
+
+
 ## 对象属性配置
 
 ## 原型和继承
